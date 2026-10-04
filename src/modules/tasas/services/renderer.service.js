@@ -5,61 +5,72 @@ import path from 'path';
 import { renderCarteleraTemplate } from '../templates/cartelera.template.js';
 
 let fontBuffer = null;
+const assetsCache = {
+  logo: null,
+  background: null,
+  flags: {},
+};
 
+// Precarga de fuente
 function obtenerFuente() {
   if (!fontBuffer) {
     const fontPath = path.join(process.cwd(), 'assets/fonts/Inter-Bold.ttf');
-    if (!fs.existsSync(fontPath)) {
-      throw new Error(`Archivo de fuente no encontrado en: ${fontPath}`);
-    }
-    fontBuffer = fs.readFileSync(fontPath);
+    if (fs.existsSync(fontPath)) fontBuffer = fs.readFileSync(fontPath);
   }
   return fontBuffer;
 }
 
-// Carga banderas en Base64 desde assets/flags/ (ej. ar.svg, br.png)
-export function cargarImagenBase64Local(relativePath) {
-  try {
-    const fullPath = path.join(process.cwd(), relativePath);
-    if (!fs.existsSync(fullPath)) return null;
+// Helper para convertir archivos a Data URI Base64
+function fileToBase64(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  const buffer = fs.readFileSync(filePath);
+  const ext = path.extname(filePath).toLowerCase().replace('.', '');
+  const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+  return `data:${mimeType};base64,${buffer.toString('base64')}`;
+}
 
-    const fileBuffer = fs.readFileSync(fullPath);
-    const ext = path.extname(fullPath).toLowerCase().replace('.', '');
-    const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
-
-    return `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
-  } catch {
-    return null;
+// Cargar recurso individual (Logo o Fondo) con Cache
+export function obtenerAssetBase64(nombre) {
+  if (!assetsCache[nombre]) {
+    const filePng = path.join(process.cwd(), `assets/${nombre}.png`);
+    const fileSvg = path.join(process.cwd(), `assets/${nombre}.svg`);
+    assetsCache[nombre] = fileToBase64(filePng) || fileToBase64(fileSvg);
   }
+  return assetsCache[nombre];
+}
+
+// Cargar Bandera con Cache
+export function obtenerBanderaBase64(code) {
+  const codeLower = code.toLowerCase();
+  if (!assetsCache.flags[codeLower]) {
+    const flagPng = path.join(process.cwd(), `assets/flags/${codeLower}.png`);
+    const flagSvg = path.join(process.cwd(), `assets/flags/${codeLower}.svg`);
+    assetsCache.flags[codeLower] = fileToBase64(flagPng) || fileToBase64(flagSvg);
+  }
+  return assetsCache.flags[codeLower];
 }
 
 export async function generarCarteleraPNG(datosCalculados) {
   const fontData = obtenerFuente();
 
-  // Cálculo de altura dinámica para evitar solapamiento
   const totalTarjetas = datosCalculados.tarjetas_paises?.length || 0;
   const filas = Math.ceil(totalTarjetas / 2);
-  const calculatedHeight = 260 + (filas * 170); // Header + Padding + (Filas * Alto Fila)
+  const calculatedHeight = 260 + filas * 170;
   const finalHeight = Math.max(800, calculatedHeight);
 
-  // Generación SVG vectorial con Satori
-  const svg = await satori(
-    renderCarteleraTemplate(datosCalculados),
-    {
-      width: 1080,
-      height: finalHeight,
-      fonts: [
-        {
-          name: 'Inter',
-          data: fontData,
-          weight: 700,
-          style: 'normal',
-        },
-      ],
-    }
-  );
+  const svg = await satori(renderCarteleraTemplate(datosCalculados), {
+    width: 1080,
+    height: finalHeight,
+    fonts: [
+      {
+        name: 'Inter',
+        data: fontData,
+        weight: 700,
+        style: 'normal',
+      },
+    ],
+  });
 
-  // Rasterización a PNG
   const resvg = new Resvg(svg, {
     fitTo: {
       mode: 'width',

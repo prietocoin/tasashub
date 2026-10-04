@@ -19,7 +19,7 @@ export function renderCarteleraTemplate(data) {
   const { nombre_socio, tarjetas_paises = [], hora_actualizacion } = data;
 
   const bgImageSrc = obtenerAssetBase64('bg-template');
-  const logoSrc = obtenerAssetBase64('logo');
+  const logoSrc = obtenerAssetBase64('logo'); // Carga assets/logo.png (Búho)
 
   return h(
     'div',
@@ -30,7 +30,9 @@ export function renderCarteleraTemplate(data) {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#040a17',
-        backgroundImage: bgImageSrc ? `url(${bgImageSrc})` : 'none',
+        backgroundImage: bgImageSrc
+          ? `url(${bgImageSrc})`
+          : 'radial-gradient(circle at 15% 10%, rgba(217, 119, 6, 0.15) 0%, transparent 35%), radial-gradient(circle at 85% 20%, rgba(30, 58, 138, 0.25) 0%, transparent 40%), radial-gradient(circle at 50% 90%, rgba(15, 23, 42, 0.8) 0%, transparent 100%)',
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         padding: '40px',
@@ -39,7 +41,7 @@ export function renderCarteleraTemplate(data) {
         boxSizing: 'border-box',
       },
     },
-    // Header
+    // Header con Logo del Búho
     h(
       'div',
       {
@@ -52,15 +54,39 @@ export function renderCarteleraTemplate(data) {
       },
       h(
         'div',
-        { style: { display: 'flex', alignItems: 'center', fontSize: '38px', fontWeight: 'bold' } },
-        h('span', {}, 'FUNDABLOCK'),
-        h('span', { style: { color: '#3b82f6', margin: '0 15px' } }, '|'),
-        h('span', { style: { color: '#e2e8f0' } }, nombre_socio)
+        { style: { display: 'flex', alignItems: 'center', gap: '15px' } },
+        logoSrc
+          ? h('img', {
+              src: logoSrc,
+              height: 65,
+              style: { objectFit: 'contain' },
+            })
+          : null,
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', fontSize: '36px', fontWeight: 'bold' } },
+          h('span', { style: { color: '#ffffff', letterSpacing: '1px' } }, 'FUNDABLOCK'),
+          h('span', { style: { color: '#d97706', margin: '0 12px' } }, '|'),
+          h('span', { style: { color: '#94a3b8', fontWeight: 'normal' } }, nombre_socio)
+        )
       ),
-      // Logo oficial o 'FB' como reserva
-      logoSrc
-        ? h('img', { src: logoSrc, height: 45, style: { objectFit: 'contain' } })
-        : h('div', { style: { display: 'flex', fontSize: '32px', fontWeight: '900', color: '#60a5fa' } }, 'FB')
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            color: '#fbbf24',
+            backgroundColor: 'rgba(217, 119, 6, 0.1)',
+            border: '1px solid rgba(217, 119, 6, 0.3)',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            letterSpacing: '1px',
+          },
+        },
+        'OFICIAL'
+      )
     ),
     // Grid de Países
     h(
@@ -84,7 +110,7 @@ export function renderCarteleraTemplate(data) {
             style: {
               width: '48%',
               height: '150px',
-              backgroundColor: 'rgba(15, 23, 42, 0.9)', // Fondo semitransparente si hay imagen tras de fondo
+              backgroundColor: '#0f172a',
               border: '1.5px solid #1e3a8a',
               borderTop: '4px solid #3b82f6',
               borderRadius: '16px',
@@ -126,7 +152,7 @@ export function renderCarteleraTemplate(data) {
                 ),
             h('span', { style: { fontSize: '24px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
           ),
-          // Tasas
+          // Tasas Comprar / Vender
           h(
             'div',
             {

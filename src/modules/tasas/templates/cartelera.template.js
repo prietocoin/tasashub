@@ -1,10 +1,14 @@
-// Helper nativo para VNodes de Satori (Sin necesidad de compilador JSX/Babel)
+// Helper nativo para VNodes de Satori (Garantiza display: flex en todo <div>)
 const h = (type, props = {}, ...children) => {
   const flatChildren = children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false);
   return {
     type,
     props: {
       ...props,
+      style: {
+        ...(type === 'div' ? { display: 'flex' } : {}),
+        ...(props.style || {}),
+      },
       children: flatChildren.length === 1 ? flatChildren[0] : flatChildren,
     },
   };
@@ -48,7 +52,7 @@ export function renderCarteleraTemplate(data) {
       ),
       h(
         'div',
-        { style: { fontSize: '32px', fontWeight: '900', color: '#60a5fa' } },
+        { style: { display: 'flex', fontSize: '32px', fontWeight: '900', color: '#60a5fa' } },
         'FB'
       )
     ),
@@ -106,7 +110,7 @@ export function renderCarteleraTemplate(data) {
               h('span', { style: { fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase' } }, 'Comprar'),
               h('span', { style: { fontSize: '32px', fontWeight: 'bold', color: '#34d399' } }, String(item.compra))
             ),
-            h('div', { style: { width: '1px', height: '40px', backgroundColor: '#1e3a8a' } }),
+            h('div', { style: { display: 'flex', width: '1px', height: '40px', backgroundColor: '#1e3a8a' } }),
             h(
               'div',
               { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end' } },

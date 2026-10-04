@@ -1,5 +1,21 @@
 import pool from '../../../config/db.js';
 
+// Mantiene la función original intacta
+export async function obtenerUltimoLoteTasas() {
+  const query = `
+    SELECT id_tasa, tasas, created_at
+    FROM tasas_glaukov
+    ORDER BY created_at DESC
+    LIMIT 1;
+  `;
+  const { rows } = await pool.query(query);
+  if (rows.length === 0) {
+    throw new Error('No se encontraron lotes de tasas en la tabla tasas_glaukov.');
+  }
+  return rows[0];
+}
+
+// Nueva función para comparar tendencias (Lote Actual vs Lote Anterior)
 export async function obtenerUltimosDosLotesTasas() {
   const query = `
     SELECT id_tasa, tasas, created_at
@@ -13,7 +29,7 @@ export async function obtenerUltimosDosLotesTasas() {
   }
   return {
     loteActual: rows[0],
-    loteAnterior: rows[1] || null
+    loteAnterior: rows[1] || null,
   };
 }
 

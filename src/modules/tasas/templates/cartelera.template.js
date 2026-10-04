@@ -1,4 +1,4 @@
-// Helper nativo para VNodes de Satori (Garantiza display: flex en todo <div>)
+// Helper nativo para VNodes de Satori
 const h = (type, props = {}, ...children) => {
   const flatChildren = children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false);
   return {
@@ -87,12 +87,31 @@ export function renderCarteleraTemplate(data) {
               boxSizing: 'border-box',
             },
           },
+          // Nombre + Badge País
           h(
             'div',
             { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-            h('span', { style: { fontSize: '32px' } }, item.bandera),
-            h('span', { style: { fontSize: '28px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#1e3a8a',
+                  color: '#60a5fa',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid #2563eb',
+                },
+              },
+              item.code.substring(0, 2)
+            ),
+            h('span', { style: { fontSize: '26px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
           ),
+          // Tasas
           h(
             'div',
             {

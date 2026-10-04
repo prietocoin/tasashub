@@ -13,23 +13,33 @@ const NOMBRES_PAIS = {
   CRC: 'Costa Rica', BOB: 'Bolivia', ECU: 'Ecuador', PAN: 'Panama', CAD: 'Canada'
 };
 
-export function calcularTasasCartelera(perfil, loteTasa) {
+export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) {
   const { nombre, id_grupo, moneda_base, monedas = {} } = perfil;
-  const mapaTasas = loteTasa.tasas || {};
+  const mapaTasasActuales = loteActual.tasas || {};
+  const mapaTasasAnteriores = loteAnterior?.tasas || {};
   const tarjetasPaises = [];
 
   for (const [code, config] of Object.entries(monedas)) {
     if (!config || !config.activo) continue;
 
     const codeUpper = code.toUpperCase();
-    const tasaBaseRaw = mapaTasas[codeUpper];
+    const tasaBaseRaw = mapaTasasActuales[codeUpper];
 
     if (tasaBaseRaw === undefined && !['USD', 'USDT'].includes(codeUpper)) continue;
 
     const tasaBase = normalizarNumero(tasaBaseRaw || 1.0);
     if (tasaBase === 0) continue;
 
-    // Regla acordada: Depósito siempre suma |%|, Pago siempre resta |%|
+    // Calcular Tendencia respecto al Lote Anterior
+    const tasaAnteriorRaw = mapaTasasAnteriores[codeUpper];
+    let trend = 'equal'; // 'up', 'down', 'equal'
+    
+    if (tasaAnteriorRaw !== undefined) {
+      const tasaAnterior = normalizarNumero(tasaAnteriorRaw);
+      if (tasaBase > tasaAnterior) trend = 'up';
+      else if (tasaBase < tasaAnterior) trend = 'down';
+    }
+
     const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
     const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
 
@@ -42,30 +52,29 @@ export function calcularTasasCartelera(perfil, loteTasa) {
       bandera: BANDERAS_MAP[codeUpper] || 'us',
       compra: aplicarReglaPrecisionTasa(rawCompra),
       venta: aplicarReglaPrecisionTasa(rawVenta),
+      trend, // Indicador de tendencia
     });
   }
 
-  // Zona Horaria Oficial Venezuela (America/Caracas)
   const ahoraVE = new Date();
-  
   const fechaCorta = ahoraVE.toLocaleDateString('es-VE', {
     timeZone: 'America/Caracas',
     day: '2-digit',
     month: 'short'
-  }).replace('.', ''); // Ej: "04 oct"
+  }).replace('.', '');
 
   const horaVE = ahoraVE.toLocaleTimeString('es-VE', {
     timeZone: 'America/Caracas',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
-  }); // Ej: "17:03"
+  });
 
   return {
     nombre_socio: nombre,
     id_grupo,
     moneda_base: moneda_base || 'USDT',
-    lote_tasa: loteTasa.id_tasa || 'T000',
+    lote_tasa: loteActual.id_tasa || 'T000',
     fecha_actualizacion: fechaCorta,
     hora_actualizacion: horaVE,
     tarjetas_paises: tarjetasPaises

@@ -1,4 +1,4 @@
-import { cargarImagenBase64Local } from '../services/renderer.service.js';
+import { obtenerAssetBase64, obtenerBanderaBase64 } from '../services/renderer.service.js';
 
 const h = (type, props = {}, ...children) => {
   const flatChildren = children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false);
@@ -18,6 +18,9 @@ const h = (type, props = {}, ...children) => {
 export function renderCarteleraTemplate(data) {
   const { nombre_socio, tarjetas_paises = [], hora_actualizacion } = data;
 
+  const bgImageSrc = obtenerAssetBase64('bg-template');
+  const logoSrc = obtenerAssetBase64('logo');
+
   return h(
     'div',
     {
@@ -27,6 +30,9 @@ export function renderCarteleraTemplate(data) {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#040a17',
+        backgroundImage: bgImageSrc ? `url(${bgImageSrc})` : 'none',
+        backgroundSize: '100% 100%',
+        backgroundRepeat: 'no-repeat',
         padding: '40px',
         color: '#ffffff',
         fontFamily: 'Inter',
@@ -51,11 +57,10 @@ export function renderCarteleraTemplate(data) {
         h('span', { style: { color: '#3b82f6', margin: '0 15px' } }, '|'),
         h('span', { style: { color: '#e2e8f0' } }, nombre_socio)
       ),
-      h(
-        'div',
-        { style: { display: 'flex', fontSize: '32px', fontWeight: '900', color: '#60a5fa' } },
-        'FB'
-      )
+      // Logo oficial o 'FB' como reserva
+      logoSrc
+        ? h('img', { src: logoSrc, height: 45, style: { objectFit: 'contain' } })
+        : h('div', { style: { display: 'flex', fontSize: '32px', fontWeight: '900', color: '#60a5fa' } }, 'FB')
     ),
     // Grid de Países
     h(
@@ -70,10 +75,7 @@ export function renderCarteleraTemplate(data) {
         },
       },
       tarjetas_paises.map((item) => {
-        // Intenta cargar la imagen local en assets/flags/AR.png o assets/flags/AR.svg
-        const flagImgSrc =
-          cargarImagenBase64Local(`assets/flags/${item.code.toLowerCase()}.png`) ||
-          cargarImagenBase64Local(`assets/flags/${item.code.toLowerCase()}.svg`);
+        const flagSrc = obtenerBanderaBase64(item.code);
 
         return h(
           'div',
@@ -82,7 +84,7 @@ export function renderCarteleraTemplate(data) {
             style: {
               width: '48%',
               height: '150px',
-              backgroundColor: '#0f172a',
+              backgroundColor: 'rgba(15, 23, 42, 0.9)', // Fondo semitransparente si hay imagen tras de fondo
               border: '1.5px solid #1e3a8a',
               borderTop: '4px solid #3b82f6',
               borderRadius: '16px',
@@ -93,16 +95,16 @@ export function renderCarteleraTemplate(data) {
               boxSizing: 'border-box',
             },
           },
-          // Header Tarjeta (Bandera o Badge + Nombre)
+          // Header Tarjeta (Bandera + Nombre)
           h(
             'div',
             { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-            flagImgSrc
+            flagSrc
               ? h('img', {
-                  src: flagImgSrc,
-                  width: 32,
-                  height: 24,
-                  style: { borderRadius: '4px', objectFit: 'cover' },
+                  src: flagSrc,
+                  width: 36,
+                  height: 26,
+                  style: { borderRadius: '4px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)' },
                 })
               : h(
                   'div',

@@ -18,8 +18,8 @@ const h = (type, props = {}, ...children) => {
 export function renderCarteleraTemplate(data) {
   const { nombre_socio, tarjetas_paises = [], hora_actualizacion } = data;
 
-  const bgImageSrc = obtenerAssetBase64('bg-template');
-  const logoSrc = obtenerAssetBase64('logo'); // Carga assets/logo.png (Búho)
+  const bgImageSrc = obtenerAssetBase64('background') || obtenerAssetBase64('bg-template');
+  const logoSrc = obtenerAssetBase64('logo');
 
   return h(
     'div',
@@ -30,10 +30,9 @@ export function renderCarteleraTemplate(data) {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#040a17',
-        backgroundImage: bgImageSrc
-          ? `url(${bgImageSrc})`
-          : 'radial-gradient(circle at 15% 10%, rgba(217, 119, 6, 0.15) 0%, transparent 35%), radial-gradient(circle at 85% 20%, rgba(30, 58, 138, 0.25) 0%, transparent 40%), radial-gradient(circle at 50% 90%, rgba(15, 23, 42, 0.8) 0%, transparent 100%)',
-        backgroundSize: '100% 100%',
+        backgroundImage: bgImageSrc ? `url(${bgImageSrc})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
         padding: '40px',
         color: '#ffffff',
@@ -41,7 +40,7 @@ export function renderCarteleraTemplate(data) {
         boxSizing: 'border-box',
       },
     },
-    // Header con Logo del Búho
+    // Header
     h(
       'div',
       {
@@ -78,8 +77,8 @@ export function renderCarteleraTemplate(data) {
             fontSize: '14px',
             fontWeight: 'bold',
             color: '#fbbf24',
-            backgroundColor: 'rgba(217, 119, 6, 0.1)',
-            border: '1px solid rgba(217, 119, 6, 0.3)',
+            backgroundColor: 'rgba(217, 119, 6, 0.15)',
+            border: '1px solid rgba(217, 119, 6, 0.4)',
             padding: '6px 16px',
             borderRadius: '20px',
             letterSpacing: '1px',
@@ -88,7 +87,7 @@ export function renderCarteleraTemplate(data) {
         'OFICIAL'
       )
     ),
-    // Grid de Países
+    // Grid de Países con Efecto Glass
     h(
       'div',
       {
@@ -110,8 +109,8 @@ export function renderCarteleraTemplate(data) {
             style: {
               width: '48%',
               height: '150px',
-              backgroundColor: '#0f172a',
-              border: '1.5px solid #1e3a8a',
+              backgroundColor: 'rgba(11, 19, 38, 0.82)', // Fondo semi-transparente cristal
+              border: '1.5px solid rgba(59, 130, 246, 0.35)', // Borde cristalino
               borderTop: '4px solid #3b82f6',
               borderRadius: '16px',
               padding: '14px 20px',
@@ -160,7 +159,7 @@ export function renderCarteleraTemplate(data) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                borderTop: '1px solid #1e3a8a',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
                 paddingTop: '8px',
               },
             },
@@ -170,7 +169,7 @@ export function renderCarteleraTemplate(data) {
               h('span', { style: { fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' } }, 'Comprar'),
               h('span', { style: { fontSize: '28px', fontWeight: 'bold', color: '#34d399' } }, String(item.compra))
             ),
-            h('div', { style: { display: 'flex', width: '1px', height: '35px', backgroundColor: '#1e3a8a' } }),
+            h('div', { style: { display: 'flex', width: '1px', height: '35px', backgroundColor: 'rgba(255, 255, 255, 0.15)' } }),
             h(
               'div',
               { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end' } },
@@ -200,8 +199,8 @@ export function renderCarteleraTemplate(data) {
         'span',
         {
           style: {
-            backgroundColor: '#0f172a',
-            border: '1px solid #1d4ed8',
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            border: '1px solid rgba(29, 78, 216, 0.5)',
             padding: '4px 14px',
             borderRadius: '20px',
             color: '#ffffff',

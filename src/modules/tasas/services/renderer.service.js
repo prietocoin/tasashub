@@ -11,7 +11,24 @@ const assetsCache = {
   flags: {},
 };
 
-// Precarga de fuente
+// Mapa de conversión: Código de Divisa -> Nombre de Archivo en assets/flags/
+const MAPA_BANDERAS_ISO = {
+  ARS: 'ar',
+  BRL: 'br',
+  CLP: 'cl',
+  COP: 'co',
+  MXN: 'mx',
+  PEN: 'pe',
+  PYG: 'py',
+  VES: 've',
+  USD: 'us',
+  USDT: 'us',
+  BOB: 'bo',
+  EUR: 'eu',
+  ECU: 'ec',
+  PAN: 'pa',
+};
+
 function obtenerFuente() {
   if (!fontBuffer) {
     const fontPath = path.join(process.cwd(), 'assets/fonts/Inter-Bold.ttf');
@@ -20,7 +37,6 @@ function obtenerFuente() {
   return fontBuffer;
 }
 
-// Helper para convertir archivos a Data URI Base64
 function fileToBase64(filePath) {
   if (!fs.existsSync(filePath)) return null;
   const buffer = fs.readFileSync(filePath);
@@ -29,7 +45,6 @@ function fileToBase64(filePath) {
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
 }
 
-// Cargar recurso individual (Logo o Fondo) con Cache
 export function obtenerAssetBase64(nombre) {
   if (!assetsCache[nombre]) {
     const filePng = path.join(process.cwd(), `assets/${nombre}.png`);
@@ -39,15 +54,17 @@ export function obtenerAssetBase64(nombre) {
   return assetsCache[nombre];
 }
 
-// Cargar Bandera con Cache
 export function obtenerBanderaBase64(code) {
-  const codeLower = code.toLowerCase();
-  if (!assetsCache.flags[codeLower]) {
-    const flagPng = path.join(process.cwd(), `assets/flags/${codeLower}.png`);
-    const flagSvg = path.join(process.cwd(), `assets/flags/${codeLower}.svg`);
-    assetsCache.flags[codeLower] = fileToBase64(flagPng) || fileToBase64(flagSvg);
+  if (!code) return null;
+  const codeUpper = code.toUpperCase();
+  const filename = MAPA_BANDERAS_ISO[codeUpper] || code.toLowerCase().substring(0, 2);
+
+  if (!assetsCache.flags[filename]) {
+    const flagPng = path.join(process.cwd(), `assets/flags/${filename}.png`);
+    const flagSvg = path.join(process.cwd(), `assets/flags/${filename}.svg`);
+    assetsCache.flags[filename] = fileToBase64(flagPng) || fileToBase64(flagSvg);
   }
-  return assetsCache.flags[codeLower];
+  return assetsCache.flags[filename];
 }
 
 export async function generarCarteleraPNG(datosCalculados) {

@@ -1,6 +1,5 @@
 import pool from '../../../config/db.js';
 
-// Mantiene la función original intacta
 export async function obtenerUltimoLoteTasas() {
   const query = `
     SELECT id_tasa, tasas, created_at
@@ -15,7 +14,6 @@ export async function obtenerUltimoLoteTasas() {
   return rows[0];
 }
 
-// Nueva función para comparar tendencias (Lote Actual vs Lote Anterior)
 export async function obtenerUltimosDosLotesTasas() {
   const query = `
     SELECT id_tasa, tasas, created_at
@@ -34,13 +32,17 @@ export async function obtenerUltimosDosLotesTasas() {
 }
 
 export async function obtenerPerfilSocio(nombreSocio) {
+  if (!nombreSocio) {
+    throw new Error('El nombre del socio no fue proporcionado en la petición.');
+  }
+
   const query = `
     SELECT *
     FROM perfiles_glaukov
     WHERE LOWER(nombre) = LOWER($1)
     LIMIT 1;
   `;
-  const { rows } = await pool.query(query, [nombreSocio.trim()]);
+  const { rows } = await pool.query(query, [String(nombreSocio).trim()]);
   if (rows.length === 0) {
     throw new Error(`Socio "${nombreSocio}" no encontrado en perfiles_glaukov.`);
   }

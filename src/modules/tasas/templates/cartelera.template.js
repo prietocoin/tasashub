@@ -15,12 +15,103 @@ const h = (type, props = {}, ...children) => {
   };
 };
 
-// Configuración de Badges de Tendencia
-const TREND_BADGES = {
-  up: { symbol: '▲', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' },
-  down: { symbol: '▼', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.15)' },
-  equal: { symbol: '─', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
-};
+// Componente Vectorial SVG para Indicador de Tendencia
+function renderTrendBadge(trend) {
+  if (trend === 'up') {
+    return h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(52, 211, 153, 0.15)',
+          border: '1px solid rgba(52, 211, 153, 0.35)',
+          borderRadius: '8px',
+          padding: '4px 8px',
+        },
+      },
+      h(
+        'svg',
+        {
+          width: 18,
+          height: 18,
+          viewBox: '0 0 24 24',
+          fill: 'none',
+          stroke: '#34d399',
+          strokeWidth: 3,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+        },
+        h('polyline', { points: '23 6 13.5 15.5 8.5 10.5 1 18' }),
+        h('polyline', { points: '17 6 23 6 23 12' })
+      )
+    );
+  }
+
+  if (trend === 'down') {
+    return h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(251, 113, 133, 0.15)',
+          border: '1px solid rgba(251, 113, 133, 0.35)',
+          borderRadius: '8px',
+          padding: '4px 8px',
+        },
+      },
+      h(
+        'svg',
+        {
+          width: 18,
+          height: 18,
+          viewBox: '0 0 24 24',
+          fill: 'none',
+          stroke: '#fb7185',
+          strokeWidth: 3,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+        },
+        h('polyline', { points: '23 18 13.5 8.5 8.5 13.5 1 6' }),
+        h('polyline', { points: '17 18 23 18 23 12' })
+      )
+    );
+  }
+
+  // Lote Estable (flecha recta horizontal a la derecha en tono amarillo)
+  return h(
+    'div',
+    {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(251, 191, 36, 0.15)',
+        border: '1px solid rgba(251, 191, 36, 0.35)',
+        borderRadius: '8px',
+        padding: '4px 8px',
+      },
+    },
+    h(
+      'svg',
+      {
+        width: 18,
+        height: 18,
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        stroke: '#fbbf24',
+        strokeWidth: 3,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+      },
+      h('line', { x1: '4', y1: '12', x2: '20', y2: '12' }),
+      h('polyline', { points: '14 6 20 12 14 18' })
+    )
+  );
+}
 
 export function renderCarteleraTemplate(data) {
   const { nombre_socio, tarjetas_paises = [], hora_actualizacion, fecha_actualizacion, lote_tasa } = data;
@@ -108,7 +199,6 @@ export function renderCarteleraTemplate(data) {
       },
       tarjetas_paises.map((item) => {
         const flagSrc = obtenerBanderaBase64(item.code);
-        const trendConfig = TREND_BADGES[item.trend] || TREND_BADGES.equal;
 
         return h(
           'div',
@@ -128,7 +218,7 @@ export function renderCarteleraTemplate(data) {
               boxSizing: 'border-box',
             },
           },
-          // Header Tarjeta (Bandera + Nombre + Badge Trend)
+          // Header Tarjeta (Bandera + Nombre + Badge Trend SVG)
           h(
             'div',
             { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -145,26 +235,9 @@ export function renderCarteleraTemplate(data) {
                 : null,
               h('span', { style: { fontSize: '24px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
             ),
-            // Píldora de Tendencia (▲ / ▼ / ─)
-            h(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: trendConfig.bg,
-                  color: trendConfig.color,
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  padding: '2px 8px',
-                  borderRadius: '10px',
-                },
-              },
-              trendConfig.symbol
-            )
+            renderTrendBadge(item.trend)
           ),
-          // Tasas
+          // Tasas Comprar / Vender
           h(
             'div',
             {

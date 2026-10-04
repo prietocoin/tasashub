@@ -11,22 +11,10 @@ const assetsCache = {
   flags: {},
 };
 
-// Mapa de conversión: Código de Divisa -> Nombre de Archivo en assets/flags/
 const MAPA_BANDERAS_ISO = {
-  ARS: 'ar',
-  BRL: 'br',
-  CLP: 'cl',
-  COP: 'co',
-  MXN: 'mx',
-  PEN: 'pe',
-  PYG: 'py',
-  VES: 've',
-  USD: 'us',
-  USDT: 'us',
-  BOB: 'bo',
-  EUR: 'eu',
-  ECU: 'ec',
-  PAN: 'pa',
+  ARS: 'ar', BRL: 'br', CLP: 'cl', COP: 'co', MXN: 'mx',
+  PEN: 'pe', PYG: 'py', VES: 've', USD: 'us', USDT: 'us',
+  BOB: 'bo', EUR: 'eu', ECU: 'ec', PAN: 'pa',
 };
 
 function obtenerFuente() {
@@ -41,7 +29,7 @@ function fileToBase64(filePath) {
   if (!fs.existsSync(filePath)) return null;
   const buffer = fs.readFileSync(filePath);
   const ext = path.extname(filePath).toLowerCase().replace('.', '');
-  const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+  const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'png' ? 'png' : 'jpeg'}`;
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
 }
 
@@ -49,7 +37,10 @@ export function obtenerAssetBase64(nombre) {
   if (!assetsCache[nombre]) {
     const filePng = path.join(process.cwd(), `assets/${nombre}.png`);
     const fileSvg = path.join(process.cwd(), `assets/${nombre}.svg`);
-    assetsCache[nombre] = fileToBase64(filePng) || fileToBase64(fileSvg);
+    const fileJpg = path.join(process.cwd(), `assets/${nombre}.jpg`);
+    const fileJpeg = path.join(process.cwd(), `assets/${nombre}.jpeg`);
+
+    assetsCache[nombre] = fileToBase64(filePng) || fileToBase64(fileSvg) || fileToBase64(fileJpg) || fileToBase64(fileJpeg);
   }
   return assetsCache[nombre];
 }

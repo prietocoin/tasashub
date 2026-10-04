@@ -17,15 +17,37 @@ function obtenerFuente() {
   return fontBuffer;
 }
 
+// Carga banderas en Base64 desde assets/flags/ (ej. ar.svg, br.png)
+export function cargarImagenBase64Local(relativePath) {
+  try {
+    const fullPath = path.join(process.cwd(), relativePath);
+    if (!fs.existsSync(fullPath)) return null;
+
+    const fileBuffer = fs.readFileSync(fullPath);
+    const ext = path.extname(fullPath).toLowerCase().replace('.', '');
+    const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+
+    return `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function generarCarteleraPNG(datosCalculados) {
   const fontData = obtenerFuente();
 
-  // 1. Satori convierte la plantilla JSX en un SVG vectorial en memoria
+  // Cálculo de altura dinámica para evitar solapamiento
+  const totalTarjetas = datosCalculados.tarjetas_paises?.length || 0;
+  const filas = Math.ceil(totalTarjetas / 2);
+  const calculatedHeight = 260 + (filas * 170); // Header + Padding + (Filas * Alto Fila)
+  const finalHeight = Math.max(800, calculatedHeight);
+
+  // Generación SVG vectorial con Satori
   const svg = await satori(
     renderCarteleraTemplate(datosCalculados),
     {
       width: 1080,
-      height: 800,
+      height: finalHeight,
       fonts: [
         {
           name: 'Inter',
@@ -37,7 +59,7 @@ export async function generarCarteleraPNG(datosCalculados) {
     }
   );
 
-  // 2. Resvg rasteriza el SVG a un Buffer PNG a 1080px
+  // Rasterización a PNG
   const resvg = new Resvg(svg, {
     fitTo: {
       mode: 'width',

@@ -1,9 +1,9 @@
 import { normalizarNumero, aplicarReglaPrecisionTasa } from '../../../utils/formatters.js';
 
 const BANDERAS_MAP = {
-  COP: '🇨🇴', PEN: '🇵🇪', ARS: '🇦🇷', BRL: '🇧🇷', MXN: '🇲🇽', EUR: '🇪🇺',
-  USD: '🇺🇸', USDT: '₮', PYG: '🇵🇾', VES: '🇻🇪', CLP: '🇨🇱', DOP: '🇩🇴',
-  CRC: '🇨🇷', BOB: '🇧🇴', ECU: '🇪🇨', PAN: '🇵🇦', CAD: '🇨🇦'
+  COP: 'co', PEN: 'pe', ARS: 'ar', BRL: 'br', MXN: 'mx', EUR: 'eu',
+  USD: 'us', USDT: 'us', PYG: 'py', VES: 've', CLP: 'cl', DOP: 'do',
+  CRC: 'cr', BOB: 'bo', ECU: 'ec', PAN: 'pa', CAD: 'ca'
 };
 
 const NOMBRES_PAIS = {
@@ -29,8 +29,7 @@ export function calcularTasasCartelera(perfil, loteTasa) {
     const tasaBase = normalizarNumero(tasaBaseRaw || 1.0);
     if (tasaBase === 0) continue;
 
-    // Regla acordada: Math.abs() para la cartelera
-    // Depósito (Compra) siempre suma |%|, Pago (Venta) siempre resta |%|
+    // Regla acordada: Depósito siempre suma |%|, Pago siempre resta |%|
     const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
     const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
 
@@ -40,23 +39,35 @@ export function calcularTasasCartelera(perfil, loteTasa) {
     tarjetasPaises.push({
       code: codeUpper,
       nombre_pais: NOMBRES_PAIS[codeUpper] || codeUpper,
-      bandera: BANDERAS_MAP[codeUpper] || '🏳️',
+      bandera: BANDERAS_MAP[codeUpper] || 'us',
       compra: aplicarReglaPrecisionTasa(rawCompra),
       venta: aplicarReglaPrecisionTasa(rawVenta),
     });
   }
+
+  // Zona Horaria Oficial Venezuela (America/Caracas)
+  const ahoraVE = new Date();
+  
+  const fechaCorta = ahoraVE.toLocaleDateString('es-VE', {
+    timeZone: 'America/Caracas',
+    day: '2-digit',
+    month: 'short'
+  }).replace('.', ''); // Ej: "04 oct"
+
+  const horaVE = ahoraVE.toLocaleTimeString('es-VE', {
+    timeZone: 'America/Caracas',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }); // Ej: "17:03"
 
   return {
     nombre_socio: nombre,
     id_grupo,
     moneda_base: moneda_base || 'USDT',
     lote_tasa: loteTasa.id_tasa || 'T000',
-    hora_actualizacion: new Date().toLocaleTimeString('es-VE', {
-      timeZone: 'America/Caracas',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }),
+    fecha_actualizacion: fechaCorta,
+    hora_actualizacion: horaVE,
     tarjetas_paises: tarjetasPaises
   };
 }

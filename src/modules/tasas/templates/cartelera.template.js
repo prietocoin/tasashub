@@ -16,7 +16,7 @@ const h = (type, props = {}, ...children) => {
 };
 
 export function renderCarteleraTemplate(data) {
-  const { nombre_socio, tarjetas_paises = [], hora_actualizacion } = data;
+  const { nombre_socio, tarjetas_paises = [], hora_actualizacion, fecha_actualizacion, lote_tasa } = data;
 
   const bgImageSrc = obtenerAssetBase64('background') || obtenerAssetBase64('bg-template');
   const logoSrc = obtenerAssetBase64('logo');
@@ -87,7 +87,7 @@ export function renderCarteleraTemplate(data) {
         'OFICIAL'
       )
     ),
-    // Grid de Países con Efecto Glass
+    // Grid de Países
     h(
       'div',
       {
@@ -109,8 +109,8 @@ export function renderCarteleraTemplate(data) {
             style: {
               width: '48%',
               height: '150px',
-              backgroundColor: 'rgba(11, 19, 38, 0.82)', // Fondo semi-transparente cristal
-              border: '1.5px solid rgba(59, 130, 246, 0.35)', // Borde cristalino
+              backgroundColor: 'rgba(11, 19, 38, 0.85)',
+              border: '1.5px solid rgba(59, 130, 246, 0.35)',
               borderTop: '4px solid #3b82f6',
               borderRadius: '16px',
               padding: '14px 20px',
@@ -151,7 +151,7 @@ export function renderCarteleraTemplate(data) {
                 ),
             h('span', { style: { fontSize: '24px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
           ),
-          // Tasas Comprar / Vender
+          // Tasas
           h(
             'div',
             {
@@ -180,7 +180,7 @@ export function renderCarteleraTemplate(data) {
         );
       })
     ),
-    // Footer
+    // Footer con Cajas Protegidas (Glassmorphism)
     h(
       'div',
       {
@@ -190,23 +190,47 @@ export function renderCarteleraTemplate(data) {
           alignItems: 'center',
           marginTop: '25px',
           paddingTop: '10px',
-          fontSize: '16px',
-          color: '#94a3b8',
         },
       },
-      h('span', {}, 'TasasHub Engine • Fundablock'),
+      // Píldora Izquierda (Engine + Marca)
       h(
-        'span',
+        'div',
         {
           style: {
-            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(29, 78, 216, 0.5)',
-            padding: '4px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            padding: '6px 16px',
             borderRadius: '20px',
-            color: '#ffffff',
+            color: '#94a3b8',
+            fontSize: '15px',
           },
         },
-        `Actualizado: ${hora_actualizacion}`
+        h('span', { style: { color: '#ffffff', fontWeight: 'bold' } }, 'TasasHub Engine'),
+        h('span', { style: { color: '#3b82f6' } }, '•'),
+        h('span', {}, 'Fundablock')
+      ),
+      // Píldora Derecha (Lote + Fecha + Hora)
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            padding: '6px 18px',
+            borderRadius: '20px',
+            color: '#ffffff',
+            fontSize: '15px',
+          },
+        },
+        h('span', { style: { color: '#fbbf24', fontWeight: 'bold' } }, `Lote: ${lote_tasa || 'T000'}`),
+        h('span', { style: { color: '#3b82f6' } }, '|'),
+        h('span', { style: { color: '#e2e8f0' } }, `${fecha_actualizacion || ''} • ${hora_actualizacion}`)
       )
     )
   );

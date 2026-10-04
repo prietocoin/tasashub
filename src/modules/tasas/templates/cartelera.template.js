@@ -15,6 +15,13 @@ const h = (type, props = {}, ...children) => {
   };
 };
 
+// Configuración de Badges de Tendencia
+const TREND_BADGES = {
+  up: { symbol: '▲', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' },
+  down: { symbol: '▼', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.15)' },
+  equal: { symbol: '─', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
+};
+
 export function renderCarteleraTemplate(data) {
   const { nombre_socio, tarjetas_paises = [], hora_actualizacion, fecha_actualizacion, lote_tasa } = data;
 
@@ -101,6 +108,7 @@ export function renderCarteleraTemplate(data) {
       },
       tarjetas_paises.map((item) => {
         const flagSrc = obtenerBanderaBase64(item.code);
+        const trendConfig = TREND_BADGES[item.trend] || TREND_BADGES.equal;
 
         return h(
           'div',
@@ -120,36 +128,41 @@ export function renderCarteleraTemplate(data) {
               boxSizing: 'border-box',
             },
           },
-          // Header Tarjeta (Bandera + Nombre)
+          // Header Tarjeta (Bandera + Nombre + Badge Trend)
           h(
             'div',
-            { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-            flagSrc
-              ? h('img', {
-                  src: flagSrc,
-                  width: 36,
-                  height: 26,
-                  style: { borderRadius: '4px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)' },
-                })
-              : h(
-                  'div',
-                  {
-                    style: {
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#1e3a8a',
-                      color: '#60a5fa',
-                      fontWeight: 'bold',
-                      fontSize: '15px',
-                      padding: '3px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid #2563eb',
-                    },
-                  },
-                  item.code.substring(0, 2)
-                ),
-            h('span', { style: { fontSize: '24px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
+            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+              flagSrc
+                ? h('img', {
+                    src: flagSrc,
+                    width: 36,
+                    height: 26,
+                    style: { borderRadius: '4px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)' },
+                  })
+                : null,
+              h('span', { style: { fontSize: '24px', fontWeight: 'bold', color: '#ffffff' } }, item.nombre_pais)
+            ),
+            // Píldora de Tendencia (▲ / ▼ / ─)
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: trendConfig.bg,
+                  color: trendConfig.color,
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                },
+              },
+              trendConfig.symbol
+            )
           ),
           // Tasas
           h(
@@ -180,7 +193,7 @@ export function renderCarteleraTemplate(data) {
         );
       })
     ),
-    // Footer con Cajas Protegidas (Glassmorphism)
+    // Footer
     h(
       'div',
       {
@@ -192,7 +205,6 @@ export function renderCarteleraTemplate(data) {
           paddingTop: '10px',
         },
       },
-      // Píldora Izquierda (Engine + Marca)
       h(
         'div',
         {
@@ -212,7 +224,6 @@ export function renderCarteleraTemplate(data) {
         h('span', { style: { color: '#3b82f6' } }, '•'),
         h('span', {}, 'Fundablock')
       ),
-      // Píldora Derecha (Lote + Fecha + Hora)
       h(
         'div',
         {

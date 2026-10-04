@@ -5,9 +5,19 @@ import {
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
 
+// Extrae el socio de los parámetros sin importar cómo se nombró en la ruta
+function extraerNombreSocio(req) {
+  return (
+    req.params.nombreSocio ||
+    req.params.socio ||
+    req.params.nombre_socio ||
+    Object.values(req.params)[0]
+  );
+}
+
 export async function renderCartelera(req, res) {
   try {
-    const { nombreSocio } = req.params;
+    const nombreSocio = extraerNombreSocio(req);
 
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
@@ -26,7 +36,7 @@ export async function renderCartelera(req, res) {
 
 export async function calcularTasas(req, res) {
   try {
-    const { nombreSocio } = req.params;
+    const nombreSocio = extraerNombreSocio(req);
 
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
@@ -41,7 +51,7 @@ export async function calcularTasas(req, res) {
 
 export async function dispararCartelera(req, res) {
   try {
-    const { nombreSocio } = req.params;
+    const nombreSocio = extraerNombreSocio(req);
 
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();

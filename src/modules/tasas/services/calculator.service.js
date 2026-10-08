@@ -13,10 +13,27 @@ const NOMBRES_PAIS = {
   CRC: 'Costa Rica', BOB: 'Bolivia', ECU: 'Ecuador', PAN: 'Panama', CAD: 'Canada'
 };
 
+/**
+ * Auxiliar para obtener la tasa base de la moneda nativa del socio (ej: PEN)
+ */
+function obtenerTasaMonedaBase(mapaTasas, monedaBase) {
+  const code = (monedaBase || 'USDT').toUpperCase().trim();
+  if (['USD', 'USDT', 'PYUSD', 'ECU', 'PAN'].includes(code)) return 1.0;
+
+  const rawVal = mapaTasas[code];
+  const numVal = normalizarNumero(rawVal);
+  return numVal > 0 ? numVal : 1.0;
+}
+
 export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) {
   const { nombre, id_grupo, moneda_base, monedas = {} } = perfil;
   const mapaTasasActuales = loteActual.tasas || {};
   const mapaTasasAnteriores = loteAnterior?.tasas || {};
+
+  // 🟢 1. OBTENER LA TASA BASE DE LA MONEDA DEL SOCIO (ej: PEN = 3.44)
+  const baseSocioActual = obtenerTasaMonedaBase(mapaTasasActuales, moneda_base);
+  const baseSocioAnterior = obtenerTasaMonedaBase(mapaTasasAnteriores, moneda_base);
+
   const tarjetasPaises = [];
 
   for (const [code, config] of Object.entries(monedas)) {
@@ -27,24 +44,34 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
 
     if (tasaBaseRaw === undefined && !['USD', 'USDT'].includes(codeUpper)) continue;
 
-    const tasaBase = normalizarNumero(tasaBaseRaw || 1.0);
-    if (tasaBase === 0) continue;
+    const tasaBasePais = normalizarNumero(tasaBaseRaw || 1.0);
+    if (tasaBasePais === 0) continue;
 
-    // Calcular Tendencia respecto al Lote Anterior
+    // 🟢 2. TRIANGULACIÓN REAL: Tasa País / Tasa Moneda Socio (ej: 1599 / 3.44 = 464.82)
+    const crossBaseActual = tasaBasePais / baseSocioActual;
+
+    // 🟢 3. CALCULAR TENDENCIA CON BASE TRIANGULADA
     const tasaAnteriorRaw = mapaTasasAnteriores[codeUpper];
-    let trend = 'equal'; // 'up', 'down', 'equal'
+    let trend = 'equal';
     
     if (tasaAnteriorRaw !== undefined) {
-      const tasaAnterior = normalizarNumero(tasaAnteriorRaw);
-      if (tasaBase > tasaAnterior) trend = 'up';
-      else if (tasaBase < tasaAnterior) trend = 'down';
+      const tasaBasePaisAnt = normalizarNumero(tasaAnteriorRaw);
+      const crossBaseAnterior = tasaBasePaisAnt / baseSocioAnterior;
+      
+      if (crossBaseActual > crossBaseAnterior) trend = 'up';
+      else if (crossBaseActual < crossBaseAnterior) trend = 'down';
     }
 
+    // 🟢 4. APLICAR PORCENTAJES Y POLARIDAD SOBRE LA TASA TRIANGULADA
     const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
     const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
+    const polaridad = config.polaridad || '+';
 
-    const rawCompra = tasaBase * (1 + pctDeposito / 100);
-    const rawVenta = tasaBase * (1 - pctPago / 100);
+    const factorD = polaridad === '-' ? (1 - pctDeposito / 100) : (1 + pctDeposito / 100);
+    const factorP = polaridad === '-' ? (1 + pctPago / 100) : (1 - pctPago / 100);
+
+    const rawCompra = crossBaseActual * factorD;
+    const rawVenta = crossBaseActual * factorP;
 
     tarjetasPaises.push({
       code: codeUpper,
@@ -52,7 +79,7 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
       bandera: BANDERAS_MAP[codeUpper] || 'us',
       compra: aplicarReglaPrecisionTasa(rawCompra),
       venta: aplicarReglaPrecisionTasa(rawVenta),
-      trend, // Indicador de tendencia
+      trend,
     });
   }
 

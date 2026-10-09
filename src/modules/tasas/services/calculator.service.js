@@ -61,16 +61,16 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
       if (crossBaseActual > crossBaseAnterior) trend = 'up';
       else if (crossBaseActual < crossBaseAnterior) trend = 'down';
     }
-// 🟢 4. APLICACIÓN PURA DE PORCENTAJES SIN POLARIDADES NI SIGNOS
+// 🟢 4. CÁLCULO DIRECTO DE PORCENTAJES DE MARGEN EN TASASHUB
 const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
 const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
 
-// Factores puros de margen sobre la tasa triangulada
+// Aplicación pura de margen sobre la tasa triangulada base
 const factorD = 1 + (pctDeposito / 100);
-const factorP = 1 - (pctPago / 100); // o ajuste según el spread base
+const factorP = 1 + (pctPago / 100);
 
 const rawCompra = crossBaseActual * factorD;
-const rawVenta = crossBaseActual * factorP;
+const rawVenta = crossBaseActual / factorP; // O crossBaseActual * (1 - pctPago/100) si es descuento
 
 tarjetasPaises.push({
   code: codeUpper,

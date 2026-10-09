@@ -61,28 +61,25 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
       if (crossBaseActual > crossBaseAnterior) trend = 'up';
       else if (crossBaseActual < crossBaseAnterior) trend = 'down';
     }
+// 🟢 4. APLICACIÓN PURA DE PORCENTAJES SIN POLARIDADES NI SIGNOS
+const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
+const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
 
-    // 🟢 4. APLICAR PORCENTAJES Y POLARIDAD SOBRE LA TASA TRIANGULADA
-    const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
-    const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
-    const polaridad = config.polaridad || '+';
+// Factores puros de margen sobre la tasa triangulada
+const factorD = 1 + (pctDeposito / 100);
+const factorP = 1 - (pctPago / 100); // o ajuste según el spread base
 
-    const factorD = polaridad === '-' ? (1 - pctDeposito / 100) : (1 + pctDeposito / 100);
-    const factorP = polaridad === '-' ? (1 + pctPago / 100) : (1 - pctPago / 100);
+const rawCompra = crossBaseActual * factorD;
+const rawVenta = crossBaseActual * factorP;
 
-    const rawCompra = crossBaseActual * factorD;
-    const rawVenta = crossBaseActual * factorP;
-
-    tarjetasPaises.push({
-      code: codeUpper,
-      nombre_pais: NOMBRES_PAIS[codeUpper] || codeUpper,
-      bandera: BANDERAS_MAP[codeUpper] || 'us',
-      compra: aplicarReglaPrecisionTasa(rawCompra),
-      venta: aplicarReglaPrecisionTasa(rawVenta),
-      trend,
-    });
-  }
-
+tarjetasPaises.push({
+  code: codeUpper,
+  nombre_pais: NOMBRES_PAIS[codeUpper] || codeUpper,
+  bandera: BANDERAS_MAP[codeUpper] || 'us',
+  compra: aplicarReglaPrecisionTasa(rawCompra),
+  venta: aplicarReglaPrecisionTasa(rawVenta),
+  trend,
+});
   const ahoraVE = new Date();
   const fechaCorta = ahoraVE.toLocaleDateString('es-VE', {
     timeZone: 'America/Caracas',

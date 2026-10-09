@@ -30,7 +30,7 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
   const mapaTasasActuales = loteActual.tasas || {};
   const mapaTasasAnteriores = loteAnterior?.tasas || {};
 
-  // 🟢 1. OBTENER LA TASA BASE DE LA MONEDA DEL SOCIO (ej: PEN = 3.44)
+  // 1. TASA BASE DE LA MONEDA DEL SOCIO
   const baseSocioActual = obtenerTasaMonedaBase(mapaTasasActuales, moneda_base);
   const baseSocioAnterior = obtenerTasaMonedaBase(mapaTasasAnteriores, moneda_base);
 
@@ -47,10 +47,10 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
     const tasaBasePais = normalizarNumero(tasaBaseRaw || 1.0);
     if (tasaBasePais === 0) continue;
 
-    // 🟢 2. TRIANGULACIÓN REAL: Tasa País / Tasa Moneda Socio (ej: 1599 / 3.44 = 464.82)
+    // 2. TRIANGULACIÓN REAL
     const crossBaseActual = tasaBasePais / baseSocioActual;
 
-    // 🟢 3. CALCULAR TENDENCIA CON BASE TRIANGULADA
+    // 3. TENDENCIA TRIANGULADA
     const tasaAnteriorRaw = mapaTasasAnteriores[codeUpper];
     let trend = 'equal';
     
@@ -61,25 +61,27 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
       if (crossBaseActual > crossBaseAnterior) trend = 'up';
       else if (crossBaseActual < crossBaseAnterior) trend = 'down';
     }
-// 🟢 4. CÁLCULO DIRECTO DE PORCENTAJES DE MARGEN EN TASASHUB
-const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
-const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
 
-// Aplicación pura de margen sobre la tasa triangulada base
-const factorD = 1 + (pctDeposito / 100);
-const factorP = 1 + (pctPago / 100);
+    // 4. APLICACIÓN DE PORCENTAJES SOBRE TASA BASE
+    const pctDeposito = Math.abs(normalizarNumero(config.porcentaje?.deposito || 0));
+    const pctPago = Math.abs(normalizarNumero(config.porcentaje?.pago || 0));
 
-const rawCompra = crossBaseActual * factorD;
-const rawVenta = crossBaseActual / factorP; // O crossBaseActual * (1 - pctPago/100) si es descuento
+    const factorD = 1 + (pctDeposito / 100);
+    const factorP = 1 + (pctPago / 100);
 
-tarjetasPaises.push({
-  code: codeUpper,
-  nombre_pais: NOMBRES_PAIS[codeUpper] || codeUpper,
-  bandera: BANDERAS_MAP[codeUpper] || 'us',
-  compra: aplicarReglaPrecisionTasa(rawCompra),
-  venta: aplicarReglaPrecisionTasa(rawVenta),
-  trend,
-});
+    const rawCompra = crossBaseActual * factorD;
+    const rawVenta = crossBaseActual / factorP;
+
+    tarjetasPaises.push({
+      code: codeUpper,
+      nombre_pais: NOMBRES_PAIS[codeUpper] || codeUpper,
+      bandera: BANDERAS_MAP[codeUpper] || 'us',
+      compra: aplicarReglaPrecisionTasa(rawCompra),
+      venta: aplicarReglaPrecisionTasa(rawVenta),
+      trend,
+    });
+  }
+
   const ahoraVE = new Date();
   const fechaCorta = ahoraVE.toLocaleDateString('es-VE', {
     timeZone: 'America/Caracas',

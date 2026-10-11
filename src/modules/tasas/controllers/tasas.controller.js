@@ -4,7 +4,7 @@ import {
 } from '../services/db.service.js';
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
-import { obtenerUltimoLoteTasas, obtenerTodosLosSocios, actualizarMonedasSocioBD } from '../services/db.service.js';
+import { obtenerUltimoLoteTasas, obtenerTodosLosSocios, actualizarConfiguracionSocio } from '../services/db.service.js';
 
 export async function obtenerTasasMonitor(req, res) {
   try {

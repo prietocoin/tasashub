@@ -4,7 +4,36 @@ import {
 } from '../services/db.service.js';
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
+import { obtenerUltimoLoteTasas, obtenerTodosLosSocios, actualizarMonedasSocioBD } from '../services/db.service.js';
 
+export async function obtenerTasasMonitor(req, res) {
+  try {
+    const lote = await obtenerUltimoLoteTasas();
+    return res.json({ success: true, id_tasa: lote.id_tasa, tasas: lote.tasas });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+export async function obtenerListaSocios(req, res) {
+  try {
+    const socios = await obtenerTodosLosSocios();
+    return res.json({ success: true, socios });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+export async function actualizarMonedasSocio(req, res) {
+  try {
+    const nombreSocio = req.params.socio;
+    const { monedas } = req.body;
+    const perfil = await actualizarConfiguracionSocioBD(nombreSocio, monedas);
+    return res.json({ success: true, perfil });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
 // Extrae el socio de los parámetros sin importar cómo se nombró en la ruta
 function extraerNombreSocio(req) {
   return (

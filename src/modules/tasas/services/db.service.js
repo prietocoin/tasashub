@@ -48,3 +48,19 @@ export async function obtenerPerfilSocio(nombreSocio) {
   }
   return rows[0];
 }
+export async function obtenerTodosLosSocios() {
+  const query = `SELECT nombre, moneda_base, monedas FROM perfiles_glaukov ORDER BY nombre ASC;`;
+  const { rows } = await pool.query(query);
+  return rows;
+}
+
+export async function actualizarConfiguracionSocioBD(nombreSocio, monedas) {
+  const query = `
+    UPDATE perfiles_glaukov 
+    SET monedas = $1 
+    WHERE LOWER(nombre) = LOWER($2) 
+    RETURNING nombre, monedas;
+  `;
+  const { rows } = await pool.query(query, [JSON.stringify(monedas), String(nombreSocio).trim()]);
+  return rows[0];
+}

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TasasHub - Gestión Unificada de Tasas</title>
+  <!-- Tailwind CSS por CDN para desarrollo ultrarrápido sin builds -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#040a17',
+            cardDark: '#0b1326',
+            borderDark: '#1e293b',
+            accentCyan: '#38bdf8',
+            accentGreen: '#34d399',
+            accentOrange: '#f97316',
+            accentPurple: '#a855f7',
+            accentRed: '#fb7185'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #040a17; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+  </style>
+</head>
+<body class="bg-brandDark text-slate-100 min-h-screen p-4 md:p-6 font-sans">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- HEADER GLOBAL -->
+    <header class="bg-cardDark border border-borderDark rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-xl">
+          ⚡
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-wide text-white">Gestión Unificada de Tasas</h1>
+          <p class="text-xs text-slate-400">TasasHub Engine • Control Global & Reglas por Socio</p>
+        </div>
+      </div>
+
+      <!-- ACCIONES GLOBALES -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 bg-slate-900/80 border border-borderDark px-3 py-1.5 rounded-full text-xs text-cyan-400">
+          <span>Modo Prueba:</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="globalTestSwitch" checked class="sr-only peer" onchange="toggleGlobalTestMode(this.checked)">
+            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+          </label>
+        </div>
+
+        <button onclick="showToast('⚡ Tasa Reenviada Exitosamente')" class="px-4 py-2 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-amber-500/20 transition">
+          ⚡ Reenviar Tasa
+        </button>
+
+        <button onclick="showToast('📑 Borrador Hoo Cargado')" class="px-4 py-2 bg-purple-500/10 border border-purple-500/40 text-purple-400 rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-purple-500/20 transition">
+          📑 Traer Borrador Hoo
+        </button>
+      </div>
+    </header>
+
+    <!-- PESTAÑAS (TABS) -->
+    <div class="border-b border-borderDark flex items-center gap-2">
+      <button id="btnTab1" onclick="switchTab(1)" class="px-5 py-3 font-bold text-sm border-b-2 border-cyan-400 text-cyan-400 transition flex items-center gap-2">
+        📊 1. Monitor de Variación & Publicación (Global)
+      </button>
+      <button id="btnTab2" onclick="switchTab(2)" class="px-5 py-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2">
+        👤 2. Selección por Socio (Checklist)
+      </button>
+    </div>
+
+    <!-- TAB 1: MONITOR GLOBAL -->
+    <div id="tab1" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+          <span>● MONITOR DE VARIACIÓN & PUBLICACIÓN</span>
+        </div>
+        <div class="bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-xs font-extrabold px-3 py-1 rounded-full" id="lblLoteActual">
+          Lote en Prod: T066
+        </div>
+      </div>
+
+      <!-- GRID DE MONEDAS DEL MONITOR -->
+      <div id="gridMonitor" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <!-- Renderizado por JS -->
+      </div>
+    </div>
+
+    <!-- TAB 2: SELECCIÓN POR SOCIO (CHECKLIST) -->
+    <div id="tab2" class="hidden space-y-4">
+      
+      <!-- TOOLBAR BARRA DEL SOCIO (COMPACTA Y ALINEADA) -->
+      <div class="bg-cardDark border border-borderDark rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-md">
+        
+        <!-- LADO IZQUIERDO: SELECTOR DESPLEGABLE CON BUSCADOR -->
+        <div class="flex items-center gap-3 relative">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-bold text-sm">
+            👤
+          </div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Socio:</span>
+
+          <!-- BOTÓN TRIGGER DEL DROPDOWN -->
+          <button onclick="toggleDropdown()" class="bg-slate-900 border border-borderDark hover:border-purple-500 px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-2 transition">
+            <span id="lblSelectedPartner">Cargando...</span>
+            <span class="text-slate-400 text-[10px]">▼</span>
+          </button>
+
+          <!-- MENU DROPDOWN DE SOCIOS (HASTA 70 SOCIOS CON SCROLL) -->
+          <div id="dropdownMenu" class="hidden absolute top-12 left-0 w-72 bg-cardDark border border-borderDark rounded-xl shadow-2xl z-50 p-2 space-y-2">
+            <input type="text" id="txtSearchPartner" oninput="filterPartners()" placeholder="🔍 Buscar socio..." class="w-full bg-slate-900 border border-borderDark text-xs text-white px-3 py-2 rounded-lg outline-none focus:border-purple-500">
+            <div id="partnerListContainer" class="max-h-60 overflow-y-auto space-y-1">
+              <!-- Renderizado dinámico de socios -->
+            </div>
+          </div>
+
+          <span id="badgeTotalPartners" class="bg-purple-500/10 border border-purple-500/30 text-purple-400 text-[11px] font-bold px-2 py-0.5 rounded-full">
+            70 socios
+          </span>
+        </div>
+
+        <!-- LADO DERECHO: SWITCH DE PERFIL ON/OFF -->
+        <div class="flex items-center gap-2 bg-slate-900 border border-borderDark px-3 py-1.5 rounded-lg">
+          <span class="text-xs font-bold text-slate-300">Perfil Socio:</span>
+          <button id="btnTogglePerfil" onclick="togglePerfilState()" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+            ON (VISIBLE)
+          </button>
+        </div>
+      </div>
+
+      <!-- BANNER SI SOCIO ESTÁ EN OFF -->
+      <div id="bannerSocioOff" class="hidden bg-rose-500/10 border border-rose-500/40 text-rose-300 p-4 rounded-xl text-xs text-center font-bold">
+        ⚠️ El perfil de este socio se encuentra desactivado (OFF). Actívalo para modificar sus países y publicar tasas.
+      </div>
+
+      <!-- BARRAS DE ACCIÓN Y CONTADORES DEL CHECKLIST -->
+      <div id="checklistControls" class="flex items-center justify-between text-xs">
+        <div class="text-slate-400">
+          Países Habilitados: <strong id="lblActiveCount" class="text-cyan-400">0</strong> de <span id="lblTotalCount">15</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="setAllChecklist(true)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-borderDark rounded-lg font-bold text-slate-200 transition">
+            ☑️ Seleccionar Todos
+          </button>
+          <button onclick="setAllChecklist(false)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-borderDark rounded-lg font-bold text-slate-200 transition">
+            🔳 Desmarcar Todos
+          </button>
+        </div>
+      </div>
+
+      <!-- GRID CHECKLIST DE PAÍSES -->
+      <div id="checklistGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <!-- Renderizado dinámico de tarjetas -->
+      </div>
+
+      <!-- BARRA DE PIE PERSISTENTE (ACCIONES E INDICADOR DE PRUEBA INDIVIDUAL) -->
+      <div class="bg-cardDark border border-borderDark rounded-xl p-3 flex items-center justify-between shadow-lg sticky bottom-4 z-40">
+        <div class="flex items-center gap-3">
+          <button onclick="showToast('👁️ Generando vista previa PNG...')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-borderDark text-slate-200 text-xs font-bold rounded-lg transition flex items-center gap-2">
+            👁️ Ver Previa
+          </button>
+
+          <!-- INTERRUPTOR DE PRUEBA DEL SOCIO -->
+          <div class="flex items-center gap-2 bg-slate-900 border border-borderDark px-3 py-1.5 rounded-lg">
+            <span class="text-xs font-bold text-cyan-400">Prueba (Socio):</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="chkPartnerTest" class="sr-only peer" onchange="togglePartnerTestMode(this.checked)">
+              <div class="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition">
+            Cancelar
+          </button>
+          <button onclick="guardarCambiosSocio()" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold rounded-lg shadow-lg shadow-purple-900/40 transition">
+            💾 Guardar Cambios
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- TOAST NOTIFICADOR -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-emerald-500 text-slate-950 font-extrabold text-xs px-4 py-3 rounded-lg shadow-2xl hidden z-50">
+    Mensaje
+  </div>
+
+  <script>
+    // LISTA MAESTRA DE PAÍSES Y BANDERAS
+    const PAISES = [
+      { code: 'ARS', name: 'Argentina', flag: '🇦🇷', prod: '1,596.00', lote: '1596' },
+      { code: 'BOB', name: 'Bolivia', flag: '🇧🇴', prod: '11.87', lote: '11.87' },
+      { code: 'BRL', name: 'Brasil', flag: '🇧🇷', prod: '4.99', lote: '4.99' },
+      { code: 'CAD', name: 'Canadá', flag: '🇨🇦', prod: '1.45', lote: '1.45' },
+      { code: 'CLP', name: 'Chile', flag: '🇨🇱', prod: '986.00', lote: '986' },
+      { code: 'COP', name: 'Colombia', flag: '🇨🇴', prod: '3,190.00', lote: '3190' },
+      { code: 'CRC', name: 'Costa Rica', flag: '🇨🇷', prod: '461.00', lote: '461' },
+      { code: 'DOP', name: 'Rep. Dominicana', flag: '🇩🇴', prod: '60.82', lote: '60.82' },
+      { code: 'EUR', name: 'Europa', flag: '🇪🇺', prod: '0.90', lote: '0.9' },
+      { code: 'MXN', name: 'México', flag: '🇲🇽', prod: '18.44', lote: '18.44' },
+      { code: 'PEN', name: 'Perú', flag: '🇵🇪', prod: '3.44', lote: '3.44' },
+      { code: 'PYG', name: 'Paraguay', flag: '🇵🇾', prod: '5,785.00', lote: '5785' },
+      { code: 'VES', name: 'Venezuela', flag: '🇻🇪', prod: '990.00', lote: '990' },
+      { code: 'USD', name: 'Estados Unidos', flag: '🇺🇸', prod: '1.00', lote: '1' },
+      { code: 'USDT', name: 'Tether', flag: '🪙', prod: '1.00', lote: '1' }
+    ];
+
+    // SIMULACIÓN DE SOCIOS (HASTA 70)
+    let socios = Array.from({ length: 70 }, (_, i) => {
+      const nombres = ['ADA', 'HOO', 'LATAM_OTC', 'BRASIL_PAY', 'CARIBE_HUB', 'GLOBAL_EXCHANGE', 'ANDINO_TRADE'];
+      const base = nombres[i % nombres.length];
+      const name = i < 7 ? base : `${base}_${i + 1}`;
+      
+      // Monedas iniciales seleccionadas
+      const configMonedas = {};
+      PAISES.forEach(p => {
+        configMonedas[p.code] = { activo: (i + p.code.length) % 2 === 0 };
+      });
+
+      return {
+        id: name,
+        nombre: name,
+        moneda_base: i % 3 === 0 ? 'USDT' : 'USD',
+        activo: i % 5 !== 0, // Algunos socios en OFF para pruebas
+        modo_prueba: i % 2 === 0,
+        monedas: configMonedas
+      };
+    });
+
+    let selectedPartnerId = socios[0].id;
+
+    // INICIALIZAR
+    window.onload = () => {
+      renderMonitorGrid();
+      renderPartnerDropdown();
+      selectPartner(selectedPartnerId);
+    };
+
+    // CAMBIO DE PESTAÑAS
+    function switchTab(tabNum) {
+      document.getElementById('tab1').classList.toggle('hidden', tabNum !== 1);
+      document.getElementById('tab2').classList.toggle('hidden', tabNum !== 2);
+
+      document.getElementById('btnTab1').className = tabNum === 1 
+        ? "px-5 py-3 font-bold text-sm border-b-2 border-cyan-400 text-cyan-400 transition flex items-center gap-2"
+        : "px-5 py-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
+
+      document.getElementById('btnTab2').className = tabNum === 2 
+        ? "px-5 py-3 font-bold text-sm border-b-2 border-cyan-400 text-cyan-400 transition flex items-center gap-2"
+        : "px-5 py-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
+    }
+
+    // RENDER MONITOR GLOBAL
+    function renderMonitorGrid() {
+      const container = document.getElementById('gridMonitor');
+      container.innerHTML = PAISES.map(p => `
+        <div class="bg-cardDark border border-borderDark rounded-xl p-3 space-y-2">
+          <div class="font-extrabold text-sm text-white flex items-center justify-between">
+            <span>${p.flag} ${p.code}</span>
+            <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">PROD</span>
+          </div>
+          <div class="text-xs text-slate-400">PROD: <strong class="text-slate-200">${p.prod}</strong></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-2">
+            <div class="text-[9px] text-emerald-400 font-bold">NUEVO LOTE</div>
+            <div class="text-sm font-extrabold text-emerald-400">${p.lote}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // GESTIÓN DE DROPDOWN Y BÚSQUEDA DE SOCIOS
+    function toggleDropdown() {
+      document.getElementById('dropdownMenu').classList.toggle('hidden');
+    }
+
+    function renderPartnerDropdown(filter = '') {
+      const container = document.getElementById('partnerListContainer');
+      const filtered = socios.filter(s => s.nombre.toLowerCase().includes(filter.toLowerCase()));
+
+      container.innerHTML = filtered.map(s => `
+        <div onclick="selectPartner('${s.id}')" class="p-2 hover:bg-slate-800 rounded-lg cursor-pointer flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${s.activo ? 'bg-emerald-400' : 'bg-rose-500'}"></span>
+            <span class="font-bold text-white">${s.nombre}</span>
+          </div>
+          <span class="text-[10px] text-slate-400">${s.moneda_base}</span>
+        </div>
+      `).join('');
+    }
+
+    function filterPartners() {
+      const q = document.getElementById('txtSearchPartner').value;
+      renderPartnerDropdown(q);
+    }
+
+    function selectPartner(id) {
+      selectedPartnerId = id;
+      const socio = socios.find(s => s.id === id);
+
+      document.getElementById('lblSelectedPartner').innerText = `${socio.nombre} (${socio.moneda_base})`;
+      document.getElementById('chkPartnerTest').checked = socio.modo_prueba;
+
+      updatePerfilUI(socio.activo);
+      renderChecklistGrid(socio);
+      document.getElementById('dropdownMenu').classList.add('hidden');
+    }
+
+    // CHECKLIST Y RENDERIZADO
+    function renderChecklistGrid(socio) {
+      const container = document.getElementById('checklistGrid');
+      let activeCount = 0;
+
+      container.innerHTML = PAISES.map(p => {
+        const isChecked = socio.monedas[p.code]?.activo || false;
+        if (isChecked) activeCount++;
+
+        return `
+          <div onclick="toggleCountry('${p.code}')" class="p-3 bg-cardDark border ${isChecked ? 'border-cyan-500/60 bg-cyan-500/5' : 'border-borderDark'} rounded-xl flex items-center justify-between cursor-pointer transition">
+            <div class="flex items-center gap-2">
+              <span class="text-base">${p.flag}</span>
+              <div>
+                <div class="text-xs font-bold text-white">${p.name}</div>
+                <div class="text-[10px] text-slate-400">${p.code}</div>
+              </div>
+            </div>
+            <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 accent-cyan-400 pointer-events-none">
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('lblActiveCount').innerText = activeCount;
+      document.getElementById('lblTotalCount').innerText = PAISES.length;
+    }
+
+    function toggleCountry(code) {
+      const socio = socios.find(s => s.id === selectedPartnerId);
+      if (!socio.activo) return; // Bloqueado si está OFF
+
+      if (!socio.monedas[code]) socio.monedas[code] = {};
+      socio.monedas[code].activo = !socio.monedas[code].activo;
+
+      renderChecklistGrid(socio);
+    }
+
+    function setAllChecklist(status) {
+      const socio = socios.find(s => s.id === selectedPartnerId);
+      if (!socio.activo) return;
+
+      PAISES.forEach(p => {
+        if (!socio.monedas[p.code]) socio.monedas[p.code] = {};
+        socio.monedas[p.code].activo = status;
+      });
+
+      renderChecklistGrid(socio);
+    }
+
+    // ACCIONES DE ESTADO (PERFIL & MODO PRUEBA)
+    function togglePerfilState() {
+      const socio = socios.find(s => s.id === selectedPartnerId);
+      socio.activo = !socio.activo;
+
+      updatePerfilUI(socio.activo);
+      renderPartnerDropdown();
+    }
+
+    function updatePerfilUI(activo) {
+      const btn = document.getElementById('btnTogglePerfil');
+      const banner = document.getElementById('bannerSocioOff');
+      const grid = document.getElementById('checklistGrid');
+
+      if (activo) {
+        btn.innerText = 'ON (VISIBLE)';
+        btn.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+        banner.classList.add('hidden');
+        grid.classList.remove('opacity-40', 'pointer-events-none');
+      } else {
+        btn.innerText = 'OFF (OCULTO)';
+        btn.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-500/20 text-rose-400 border border-rose-500/40';
+        banner.classList.remove('hidden');
+        grid.classList.add('opacity-40', 'pointer-events-none');
+      }
+    }
+
+    function togglePartnerTestMode(checked) {
+      const socio = socios.find(s => s.id === selectedPartnerId);
+      socio.modo_prueba = checked;
+      showToast(`Modo prueba ${checked ? 'ACTIVADO' : 'DESACTIVADO'} para ${socio.nombre}`);
+    }
+
+    function toggleGlobalTestMode(checked) {
+      showToast(`Modo prueba Global ${checked ? 'ACTIVADO' : 'DESACTIVADO'}`);
+    }
+
+    function guardarCambiosSocio() {
+      const socio = socios.find(s => s.id === selectedPartnerId);
+      showToast(`💾 Cambios guardados para ${socio.nombre}`);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+  </script>
+</body>
+</html>

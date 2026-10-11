@@ -1,10 +1,26 @@
 import {
+  obtenerUltimoLoteTasas,
   obtenerUltimosDosLotesTasas,
   obtenerPerfilSocio,
+  obtenerTodosLosSocios,
+  actualizarConfiguracionSocioBD
 } from '../services/db.service.js';
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
-import { obtenerUltimoLoteTasas, obtenerTodosLosSocios, actualizarConfiguracionSocio } from '../services/db.service.js';
+
+// Extrae el socio de los parámetros sin importar cómo se nombró en la ruta
+function extraerNombreSocio(req) {
+  return (
+    req.params.nombreSocio ||
+    req.params.socio ||
+    req.params.nombre_socio ||
+    Object.values(req.params)[0]
+  );
+}
+
+// -------------------------------------------------------------
+// NUEVOS ENDPOINTS PARA EL DASHBOARD FRONTEND
+// -------------------------------------------------------------
 
 export async function obtenerTasasMonitor(req, res) {
   try {
@@ -26,7 +42,7 @@ export async function obtenerListaSocios(req, res) {
 
 export async function actualizarMonedasSocio(req, res) {
   try {
-    const nombreSocio = req.params.socio;
+    const nombreSocio = extraerNombreSocio(req);
     const { monedas } = req.body;
     const perfil = await actualizarConfiguracionSocioBD(nombreSocio, monedas);
     return res.json({ success: true, perfil });
@@ -34,15 +50,10 @@ export async function actualizarMonedasSocio(req, res) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }
-// Extrae el socio de los parámetros sin importar cómo se nombró en la ruta
-function extraerNombreSocio(req) {
-  return (
-    req.params.nombreSocio ||
-    req.params.socio ||
-    req.params.nombre_socio ||
-    Object.values(req.params)[0]
-  );
-}
+
+// -------------------------------------------------------------
+// ENDPOINTS EXISTENTES (SIN CAMBIOS PARA PRESERVAR PRODUCCIÓN)
+// -------------------------------------------------------------
 
 export async function renderCartelera(req, res) {
   try {

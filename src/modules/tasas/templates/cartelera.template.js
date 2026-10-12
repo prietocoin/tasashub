@@ -15,7 +15,6 @@ const h = (type, props = {}, ...children) => {
   };
 };
 
-// Componente Vectorial SVG para Indicador de Tendencia
 function renderTrendBadge(trend) {
   if (trend === 'up') {
     return h(
@@ -81,7 +80,6 @@ function renderTrendBadge(trend) {
     );
   }
 
-  // Lote Estable
   return h(
     'div',
     {
@@ -185,7 +183,7 @@ export function renderCarteleraTemplate(data) {
         'OFICIAL'
       )
     ),
-    // Grid de Países (Ajustado para ceñirse sin deformar o sobre-expandir la altura)
+    // Grid de Países (Satori Compatible: flexGrow 0, flexShrink 0)
     h(
       'div',
       {
@@ -196,7 +194,8 @@ export function renderCarteleraTemplate(data) {
           gap: '20px',
           justifyContent: 'space-between',
           alignContent: 'flex-start',
-          flex: 'initial',
+          flexGrow: 0,
+          flexShrink: 0,
           marginBottom: '20px',
         },
       },
@@ -221,7 +220,7 @@ export function renderCarteleraTemplate(data) {
               boxSizing: 'border-box',
             },
           },
-          // Header Tarjeta (Bandera + Nombre + Badge Trend SVG)
+          // Header Tarjeta
           h(
             'div',
             { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -269,7 +268,7 @@ export function renderCarteleraTemplate(data) {
         );
       })
     ),
-    // Footer (Se adhiere automáticamente al fondo según la altura calculada)
+    // Footer Adherido
     h(
       'div',
       {

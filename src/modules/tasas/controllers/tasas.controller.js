@@ -37,6 +37,26 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
   return await response.json();
 }
 
+// HELPER INTERNO PARA ADECUAR EL JSON DEL CALCULADOR AL RENDERER PNG
+function normalizarParaRenderer(datosCalculados) {
+  const tarjetas = datosCalculados.tarjetasPaises || datosCalculados.tarjetas_paises || [];
+  
+  return {
+    ...datosCalculados,
+    tarjetas_paises: tarjetas.map(t => ({
+      code: t.code,
+      pais: t.nombre_pais || t.pais || t.code,
+      nombre_pais: t.nombre_pais || t.pais || t.code,
+      bandera: t.bandera || t.code?.toLowerCase(),
+      compra: t.compra,
+      venta: t.venta,
+      trend: t.trend || 'equal'
+    }))
+  };
+}
+
+
+
 // =============================================================
 // CONTROLADORES / ENDPOINTS
 // =============================================================

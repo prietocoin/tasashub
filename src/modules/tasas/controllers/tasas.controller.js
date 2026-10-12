@@ -354,3 +354,27 @@ export async function calcularTasas(req, res) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }
+// 11. ELIMINAR LOTE POR ID_TASA (EJ: T068)
+export async function eliminarLotePorId(req, res) {
+  try {
+    const { id_tasa } = req.params;
+
+    if (!id_tasa) {
+      return res.status(400).json({ success: false, error: 'Debe proporcionar un ID de lote válido.' });
+    }
+
+    const result = await pool.query('DELETE FROM tasas_glaukov WHERE LOWER(id_tasa) = LOWER($1) RETURNING *', [id_tasa]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: `No se encontró el lote ${id_tasa}.` });
+    }
+
+    return res.json({
+      success: true,
+      message: `Lote ${id_tasa} eliminado correctamente.`
+    });
+  } catch (error) {
+    console.error('[Error eliminarLotePorId]:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}

@@ -14,7 +14,6 @@ import {
   reinterpretarNotificacionRemesas
 } from '../controllers/tasas.controller.js';
 
-
 const router = express.Router();
 
 // Endpoints Dashboard
@@ -26,7 +25,10 @@ router.put('/socios/:socio', actualizarMonedasSocio);
 router.post('/guardar-lote', guardarLoteSolo);
 router.post('/publicar-lote', publicarLoteSolo);
 
-// Endpoints Producción Existentes y Disparo Masivo
+// 🚀 Endpoint Notificar Remesas
+router.post('/notificar-remesas', reinterpretarNotificacionRemesas);
+
+// Endpoints Producción Existentes
 router.get('/calcular/:socio', calcularTasas);
 router.get('/render/:socio', renderCartelera);
 router.post('/render', renderCartelera);

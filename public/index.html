@@ -524,6 +524,34 @@
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 2200);
     }
+
+    async function dispararCarteleraSocio() {
+  if (!socioActivo) return;
+
+  showToast(`⚡ Enviando cartelera a ${socioActivo.nombre}...`);
+
+  try {
+    const res = await fetch('/api/v1/tasas/disparar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        socio: socioActivo.nombre,
+        nombre: socioActivo.nombre,
+        modo_prueba: socioActivo.modo_prueba 
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(`✅ Cartelera enviada para ${socioActivo.nombre}`);
+    } else {
+      showToast(`❌ Error: ${data.error || 'No se pudo enviar'}`);
+    }
+  } catch (e) {
+    console.error('Error al disparar socio:', e);
+    showToast('❌ Error de conexión al servidor');
+  }
+}
   </script>
 </body>
 </html>

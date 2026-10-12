@@ -7,6 +7,11 @@ import {
 } from '../services/db.service.js';
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
+import { env } from '../../../config/env.js';
+
+// Instancia fija y JID de prueba para Evolution API
+const INSTANCIA_EVOLUTION = env.EVOLUTION_INSTANCE || 'Jairo';
+const JID_GRUPO_PRUEBA = env.JID_GRUPO_PRUEBA || '120363421142957552@g.us';
 
 // Extrae el socio de PARAMS o de BODY (soporta GET / socio en URL y POST con JSON body)
 function extraerNombreSocio(req) {
@@ -19,6 +24,35 @@ function extraerNombreSocio(req) {
     req.params?.nombre_socio ||
     (req.params ? Object.values(req.params)[0] : null)
   );
+}
+
+// Función auxiliar interna para despachar a Evolution API
+async function enviarMediaEvolution(jidDestino, base64Image, caption = '') {
+  const url = `${env.EVOLUTION_API_URL}/message/sendMedia/${INSTANCIA_EVOLUTION}`;
+
+  const payload = {
+    number: jidDestino,
+    mediaMessage: {
+      mediatype: 'image',
+      caption: caption,
+      media: `data:image/png;base64,${base64Image}`
+    }
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': env.AUTHENTICATION_API_KEY
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`Evolution API Error: ${data.message || JSON.stringify(data)}`);
+  }
+  return data;
 }
 
 // -------------------------------------------------------------
@@ -55,7 +89,7 @@ export async function actualizarMonedasSocio(req, res) {
 }
 
 // -------------------------------------------------------------
-// ENDPOINTS EXISTENTES
+// ENDPOINTS EXISTENTES (CON ENVÍO REAL VÍA EVOLUTION API - JAIRO)
 // -------------------------------------------------------------
 
 export async function renderCartelera(req, res) {
@@ -103,6 +137,7 @@ export async function calcularTasas(req, res) {
 export async function dispararCartelera(req, res) {
   try {
     const nombreSocio = extraerNombreSocio(req);
+    const { modo_prueba } = req.body;
 
     if (!nombreSocio) {
       return res.status(400).json({ 
@@ -111,17 +146,37 @@ export async function dispararCartelera(req, res) {
       });
     }
 
+    // 1. Obtener datos del socio y lotes de tasas
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
 
+    // 2. Calcular y generar PNG
     const datosCalculados = calcularTasasCartelera(perfil, loteActual, loteAnterior);
     const pngBuffer = await generarCarteleraPNG(datosCalculados);
+    const base64Image = pngBuffer.toString('base64');
+
+    // 3. Determinar JID de destino (Si modo_prueba es true -> Grupo de Prueba, sino -> perfil.id_grupo)
+    const jidDestino = modo_prueba 
+      ? JID_GRUPO_PRUEBA 
+      : (perfil.id_grupo || JID_GRUPO_PRUEBA);
+
+    const caption = `${modo_prueba ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${datosCalculados.nombre_socio}* — Lote: ${datosCalculados.lote_tasa}`;
+
+    // 4. Enviar a Evolution API (Instancia: Jairo)
+    let evolutionResponse = null;
+    try {
+      evolutionResponse = await enviarMediaEvolution(jidDestino, base64Image, caption);
+    } catch (evoErr) {
+      console.error('[Error Evolution API Dispatch]:', evoErr);
+    }
 
     return res.json({
       success: true,
-      id_grupo: datosCalculados.id_grupo,
+      id_grupo: jidDestino,
       nombre_socio: datosCalculados.nombre_socio,
-      base64: pngBuffer.toString('base64'),
+      base64: base64Image,
+      modo_prueba: !!modo_prueba,
+      evolution: evolutionResponse
     });
   } catch (error) {
     console.error('[Error Controller Disparar]:', error);

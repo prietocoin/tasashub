@@ -30,7 +30,7 @@ function normalizarParaRenderer(datosCalculados) {
 }
 
 // -------------------------------------------------------------
-// HELPER: Enviar Imagen base64 vía Evolution API (CORREGIDO)
+// HELPER: Enviar Imagen base64 vía Evolution API
 // -------------------------------------------------------------
 async function enviarMediaEvolution(jid, base64Data, caption) {
   if (!EVOLUTION_API_URL || !EVOLUTION_INSTANCE) {
@@ -416,6 +416,27 @@ export async function eliminarLotePorId(req, res) {
     });
   } catch (error) {
     console.error('[Error eliminarLotePorId]:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+// 12. REENVIAR NOTIFICACIÓN DE TASAS REMESAS (NUEVO)
+export async function reinterpretarNotificacionRemesas(req, res) {
+  try {
+    const loteRes = await pool.query('SELECT id_tasa FROM tasas_glaukov ORDER BY id DESC LIMIT 1');
+    const idTasa = loteRes.rows[0]?.id_tasa || 'T000';
+
+    const query = `
+      INSERT INTO notificaciones_tasas (id_tasa, evento, estado, created_at)
+      VALUES ($1, $2, $3, NOW())
+      RETURNING *;
+    `;
+    const result = await pool.query(query, [idTasa, 'REENVIO_REMESAS', 'PENDIENTE']);
+
+    console.log('[NOTIFICACIÓN REMESAS ENVIADA]:', result.rows[0]);
+    return res.json({ success: true, notificacion: result.rows[0] });
+  } catch (error) {
+    console.error('[Error reinterpretarNotificacionRemesas]:', error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

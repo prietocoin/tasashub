@@ -9,11 +9,10 @@ import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
 import { env } from '../../../config/env.js';
 
-// Instancia fija y JID de prueba para Evolution API
+// Instancia y JID por defecto
 const INSTANCIA_EVOLUTION = env.EVOLUTION_INSTANCE || 'Jairo';
 const JID_GRUPO_PRUEBA = env.JID_GRUPO_PRUEBA || '120363421142957552@g.us';
 
-// Extrae el socio de PARAMS o de BODY (soporta GET / socio en URL y POST con JSON body)
 function extraerNombreSocio(req) {
   return (
     req.body?.socio ||
@@ -26,12 +25,19 @@ function extraerNombreSocio(req) {
   );
 }
 
-// Función auxiliar interna para despachar a Evolution API
+// Función que despacha directamente a Evolution API (Soporta API v1 y v2)
 async function enviarMediaEvolution(jidDestino, base64Image, caption = '') {
-  const url = `${env.EVOLUTION_API_URL}/message/sendMedia/${INSTANCIA_EVOLUTION}`;
+  const baseUrl = env.EVOLUTION_API_URL?.replace(/\/$/, '');
+  const url = `${baseUrl}/message/sendMedia/${INSTANCIA_EVOLUTION}`;
+  const apiKey = env.AUTHENTICATION_API_KEY || env.EVOLUTION_API_KEY;
 
+  // Formato multiversión para Evolution API (remoteJid / number + media / mediaMessage)
   const payload = {
     number: jidDestino,
+    remoteJid: jidDestino,
+    media: `data:image/png;base64,${base64Image}`,
+    mediaType: 'image',
+    caption: caption,
     mediaMessage: {
       mediatype: 'image',
       caption: caption,
@@ -43,15 +49,25 @@ async function enviarMediaEvolution(jidDestino, base64Image, caption = '') {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'apikey': env.AUTHENTICATION_API_KEY
+      'apikey': apiKey,
+      'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify(payload)
   });
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(`Evolution API Error: ${data.message || JSON.stringify(data)}`);
+  const responseText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    data = { raw: responseText };
   }
+
+  if (!response.ok) {
+    console.error('[Evolution API HTTP Error]:', response.status, data);
+    throw new Error(`Evolution API HTTP ${response.status}: ${data.message || data.error || JSON.stringify(data)}`);
+  }
+
   return data;
 }
 
@@ -89,7 +105,7 @@ export async function actualizarMonedasSocio(req, res) {
 }
 
 // -------------------------------------------------------------
-// ENDPOINTS EXISTENTES (CON ENVÍO REAL VÍA EVOLUTION API - JAIRO)
+// ENDPOINTS EXISTENTES
 // -------------------------------------------------------------
 
 export async function renderCartelera(req, res) {
@@ -162,13 +178,8 @@ export async function dispararCartelera(req, res) {
 
     const caption = `${modo_prueba ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${datosCalculados.nombre_socio}* — Lote: ${datosCalculados.lote_tasa}`;
 
-    // 4. Enviar a Evolution API (Instancia: Jairo)
-    let evolutionResponse = null;
-    try {
-      evolutionResponse = await enviarMediaEvolution(jidDestino, base64Image, caption);
-    } catch (evoErr) {
-      console.error('[Error Evolution API Dispatch]:', evoErr);
-    }
+    // 4. Enviar a Evolution API (Asegura que si falla, eleva el error)
+    const evolutionResponse = await enviarMediaEvolution(jidDestino, base64Image, caption);
 
     return res.json({
       success: true,

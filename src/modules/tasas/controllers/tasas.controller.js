@@ -333,3 +333,24 @@ export async function dispararCartelera(req, res) {
 export async function dispararLoteGeneral(req, res) {
   return await publicarLoteSolo(req, res);
 }
+// 10. OBTENER CÁLCULO JSON DE TASAS DE UN SOCIO
+export async function calcularTasas(req, res) {
+  try {
+    const socioNombre = req.params.socio;
+    const socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    
+    if (socioRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Socio no encontrado' });
+    }
+
+    const lotes = await pool.query('SELECT * FROM tasas_glaukov ORDER BY id DESC LIMIT 2');
+    const loteActual = lotes.rows[0] || {};
+    const loteAnterior = lotes.rows[1] || loteActual;
+
+    const datosCalculados = calcularTasasCartelera(socioRes.rows[0], loteActual, loteAnterior);
+    return res.json({ success: true, datos: datosCalculados });
+  } catch (error) {
+    console.error('[Error calcularTasas]:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}

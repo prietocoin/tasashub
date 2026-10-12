@@ -9,6 +9,26 @@ const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
 const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE;
 
 // -------------------------------------------------------------
+// HELPER: Normalizar la salida de calculator.service para renderer.service
+// -------------------------------------------------------------
+function normalizarParaRenderer(datosCalculados) {
+  const tarjetas = datosCalculados.tarjetasPaises || datosCalculados.tarjetas_paises || [];
+  
+  return {
+    ...datosCalculados,
+    tarjetas_paises: tarjetas.map(t => ({
+      code: t.code,
+      pais: t.nombre_pais || t.pais || t.code,
+      nombre_pais: t.nombre_pais || t.pais || t.code,
+      bandera: t.bandera || t.code?.toLowerCase(),
+      compra: t.compra,
+      venta: t.venta,
+      trend: t.trend || 'equal'
+    }))
+  };
+}
+
+// -------------------------------------------------------------
 // HELPER: Enviar Imagen base64 vía Evolution API
 // -------------------------------------------------------------
 async function enviarMediaEvolution(jid, base64Data, caption) {
@@ -36,26 +56,6 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
 
   return await response.json();
 }
-
-// HELPER INTERNO PARA ADECUAR EL JSON DEL CALCULADOR AL RENDERER PNG
-function normalizarParaRenderer(datosCalculados) {
-  const tarjetas = datosCalculados.tarjetasPaises || datosCalculados.tarjetas_paises || [];
-  
-  return {
-    ...datosCalculados,
-    tarjetas_paises: tarjetas.map(t => ({
-      code: t.code,
-      pais: t.nombre_pais || t.pais || t.code,
-      nombre_pais: t.nombre_pais || t.pais || t.code,
-      bandera: t.bandera || t.code?.toLowerCase(),
-      compra: t.compra,
-      venta: t.venta,
-      trend: t.trend || 'equal'
-    }))
-  };
-}
-
-
 
 // =============================================================
 // CONTROLADORES / ENDPOINTS
@@ -93,6 +93,7 @@ export async function obtenerListaSocios(req, res) {
 
     const sociosNormalizados = result.rows.map(s => ({
       ...s,
+      rol: s.rol || 'SOCIO',
       monedas: typeof s.monedas === 'string' ? JSON.parse(s.monedas) : (s.monedas || {})
     }));
 
@@ -107,20 +108,20 @@ export async function obtenerListaSocios(req, res) {
 export async function actualizarMonedasSocio(req, res) {
   try {
     const { socio } = req.params;
-    const { monedas, activo, modo_prueba } = req.body;
+    const { monedas, activo, modo_prueba, rol } = req.body;
 
     let query = `
       UPDATE perfiles_glaukov 
-      SET monedas = $1, activo = $2, modo_prueba = $3
-      WHERE LOWER(nombre) = LOWER($4)
+      SET monedas = $1, activo = $2, modo_prueba = $3, rol = $4
+      WHERE LOWER(nombre) = LOWER($5)
       RETURNING *;
     `;
     let result;
     try {
-      result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, socio]);
+      result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, rol || 'SOCIO', socio]);
     } catch (e) {
-      query = `UPDATE perfiles SET monedas = $1, activo = $2, modo_prueba = $3 WHERE LOWER(nombre) = LOWER($4) RETURNING *;`;
-      result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, socio]);
+      query = `UPDATE perfiles SET monedas = $1, activo = $2, modo_prueba = $3, rol = $4 WHERE LOWER(nombre) = LOWER($5) RETURNING *;`;
+      result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, rol || 'SOCIO', socio]);
     }
 
     return res.json({ success: true, socio: result.rows[0] });
@@ -238,7 +239,9 @@ export async function publicarLoteSolo(req, res) {
       if (socio.activo === false) continue;
 
       try {
-        const datosCalculados = calcularTasasCartelera(socio, loteActual, loteAnterior);
+        const datosCalculadosRaw = calcularTasasCartelera(socio, loteActual, loteAnterior);
+        const datosCalculados = normalizarParaRenderer(datosCalculadosRaw);
+        
         const pngBuffer = await generarCarteleraPNG(datosCalculados);
         const base64Image = pngBuffer.toString('base64');
 
@@ -284,7 +287,9 @@ export async function renderCartelera(req, res) {
     const loteActual = lotes.rows[0] || {};
     const loteAnterior = lotes.rows[1] || loteActual;
 
-    const datosCalculados = calcularTasasCartelera(socioRes.rows[0], loteActual, loteAnterior);
+    const datosCalculadosRaw = calcularTasasCartelera(socioRes.rows[0], loteActual, loteAnterior);
+    const datosCalculados = normalizarParaRenderer(datosCalculadosRaw);
+    
     const pngBuffer = await generarCarteleraPNG(datosCalculados);
 
     res.setHeader('Content-Type', 'image/png');
@@ -316,7 +321,9 @@ export async function dispararCartelera(req, res) {
     const loteActual = lotes.rows[0] || {};
     const loteAnterior = lotes.rows[1] || loteActual;
 
-    const datosCalculados = calcularTasasCartelera(socioData, loteActual, loteAnterior);
+    const datosCalculadosRaw = calcularTasasCartelera(socioData, loteActual, loteAnterior);
+    const datosCalculados = normalizarParaRenderer(datosCalculadosRaw);
+    
     const pngBuffer = await generarCarteleraPNG(datosCalculados);
     const base64Image = pngBuffer.toString('base64');
 
@@ -359,7 +366,9 @@ export async function calcularTasas(req, res) {
     const loteActual = lotes.rows[0] || {};
     const loteAnterior = lotes.rows[1] || loteActual;
 
-    const datosCalculados = calcularTasasCartelera(socioRes.rows[0], loteActual, loteAnterior);
+    const datosCalculadosRaw = calcularTasasCartelera(socioRes.rows[0], loteActual, loteAnterior);
+    const datosCalculados = normalizarParaRenderer(datosCalculadosRaw);
+    
     return res.json({ success: true, datos: datosCalculados });
   } catch (error) {
     console.error('[Error calcularTasas]:', error.message);

@@ -81,7 +81,7 @@ function renderTrendBadge(trend) {
     );
   }
 
-  // Lote Estable (flecha recta horizontal a la derecha en tono amarillo)
+  // Lote Estable
   return h(
     'div',
     {
@@ -185,16 +185,19 @@ export function renderCarteleraTemplate(data) {
         'OFICIAL'
       )
     ),
-    // Grid de Países
+    // Grid de Países (Ajustado para ceñirse sin deformar o sobre-expandir la altura)
     h(
       'div',
       {
         style: {
           display: 'flex',
+          flexDirection: 'row',
           flexWrap: 'wrap',
           gap: '20px',
           justifyContent: 'space-between',
-          flex: 1,
+          alignContent: 'flex-start',
+          flex: 'initial',
+          marginBottom: '20px',
         },
       },
       tarjetas_paises.map((item) => {
@@ -266,7 +269,7 @@ export function renderCarteleraTemplate(data) {
         );
       })
     ),
-    // Footer
+    // Footer (Se adhiere automáticamente al fondo según la altura calculada)
     h(
       'div',
       {
@@ -274,7 +277,7 @@ export function renderCarteleraTemplate(data) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginTop: '25px',
+          marginTop: 'auto',
           paddingTop: '10px',
         },
       },

@@ -17,14 +17,13 @@ const MAPA_BANDERAS_ISO = {
   BOB: 'bo', EUR: 'eu', ECU: 'ec', PAN: 'pa',
 };
 
-// Carga e inicialización en memoria única para velocidad máxima
 function obtenerFuente() {
   if (!fontBuffer) {
     const fontPath = path.join(process.cwd(), 'assets/fonts/Inter-Bold.ttf');
     if (fs.existsSync(fontPath)) {
       fontBuffer = fs.readFileSync(fontPath);
     } else {
-      console.warn('⚠️ No se encontró Inter-Bold.ttf en assets/fonts/');
+      console.error('❌ CRÍTICO: No se encontró la fuente en:', fontPath);
     }
   }
   return fontBuffer;
@@ -66,29 +65,30 @@ export function obtenerBanderaBase64(code) {
 export async function generarCarteleraPNG(datosCalculados) {
   const fontData = obtenerFuente();
 
+  if (!fontData) {
+    throw new Error('No se pudo cargar la fuente Inter-Bold.ttf necesaria para Satori.');
+  }
+
   const totalTarjetas = datosCalculados.tarjetas_paises?.length || 0;
   const filas = Math.ceil(totalTarjetas / 2);
 
-  // -----------------------------------------------------------------
-  // ALTURA DINÁMICA EXACTA:
-  // Header + Footer + Margen base = 260px
-  // Cada fila de países (2 tarjetas) = 170px
-  // Piso mínimo ajustado a 450px (evita el lienzo inflado de 800px)
-  // -----------------------------------------------------------------
-  const calculatedHeight = 260 + (filas * 170);
+  // CÁLCULO DE ALTURA DINÁMICA EXACTA (ENTERO REDONDEADO)
+  // Header (110px) + Footer (90px) + Margen/Padding = 260px base
+  // Cada fila de tarjetas (150px alto + 20px gap) = 170px
+  const calculatedHeight = Math.round(260 + (filas * 170));
   const finalHeight = Math.max(450, calculatedHeight);
 
   const svg = await satori(renderCarteleraTemplate(datosCalculados), {
     width: 1080,
     height: finalHeight,
-    fonts: fontData ? [
+    fonts: [
       {
         name: 'Inter',
         data: fontData,
         weight: 700,
         style: 'normal',
       },
-    ] : [],
+    ],
   });
 
   const resvg = new Resvg(svg, {

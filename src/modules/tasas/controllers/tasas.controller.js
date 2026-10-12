@@ -9,7 +9,7 @@ import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
 import { env } from '../../../config/env.js';
 
-// Instancia y JID por defecto
+// Configuración de la API de Evolution
 const INSTANCIA_EVOLUTION = env.EVOLUTION_INSTANCE || 'Jairo';
 const JID_GRUPO_PRUEBA = env.JID_GRUPO_PRUEBA || '120363421142957552@g.us';
 
@@ -25,32 +25,28 @@ function extraerNombreSocio(req) {
   );
 }
 
-// Función que despacha directamente a Evolution API (Soporta API v1 y v2)
-async function enviarMediaEvolution(jidDestino, base64Image, caption = '') {
+// Función limpia para despachar medios a Evolution API v1 / v2
+async function enviarMediaEvolution(jidDestino, base64PureImage, caption = '') {
   const baseUrl = env.EVOLUTION_API_URL?.replace(/\/$/, '');
   const url = `${baseUrl}/message/sendMedia/${INSTANCIA_EVOLUTION}`;
   const apiKey = env.AUTHENTICATION_API_KEY || env.EVOLUTION_API_KEY;
 
-  // Formato multiversión para Evolution API (remoteJid / number + media / mediaMessage)
+  // Payload exacto requerido por Evolution API sendMedia
   const payload = {
     number: jidDestino,
-    remoteJid: jidDestino,
-    media: `data:image/png;base64,${base64Image}`,
-    mediaType: 'image',
-    caption: caption,
-    mediaMessage: {
-      mediatype: 'image',
-      caption: caption,
-      media: `data:image/png;base64,${base64Image}`
-    }
+    mediatype: 'image',
+    media: base64PureImage, // Base64 puro sin prefijos "data:image/png;base64,"
+    fileName: 'cartelera.png',
+    caption: caption
   };
+
+  console.log(`[Evolution API] Enviando a: ${url} - Destino: ${jidDestino}`);
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'apikey': apiKey,
-      'Authorization': `Bearer ${apiKey}`
+      'apikey': apiKey
     },
     body: JSON.stringify(payload)
   });
@@ -64,15 +60,15 @@ async function enviarMediaEvolution(jidDestino, base64Image, caption = '') {
   }
 
   if (!response.ok) {
-    console.error('[Evolution API HTTP Error]:', response.status, data);
-    throw new Error(`Evolution API HTTP ${response.status}: ${data.message || data.error || JSON.stringify(data)}`);
+    console.error('[Evolution API Error Response]:', response.status, data);
+    throw new Error(`Evolution API status ${response.status}: ${data.message || JSON.stringify(data)}`);
   }
 
   return data;
 }
 
 // -------------------------------------------------------------
-// NUEVOS ENDPOINTS PARA EL DASHBOARD FRONTEND
+// ENDPOINTS FRONTEND
 // -------------------------------------------------------------
 
 export async function obtenerTasasMonitor(req, res) {
@@ -105,7 +101,7 @@ export async function actualizarMonedasSocio(req, res) {
 }
 
 // -------------------------------------------------------------
-// ENDPOINTS EXISTENTES
+// RENDER & DISPARAR
 // -------------------------------------------------------------
 
 export async function renderCartelera(req, res) {
@@ -158,39 +154,38 @@ export async function dispararCartelera(req, res) {
     if (!nombreSocio) {
       return res.status(400).json({ 
         success: false, 
-        error: 'El nombre del socio no fue proporcionado en la petición.' 
+        error: 'El nombre del socio no fue proporcionado.' 
       });
     }
 
-    // 1. Obtener datos del socio y lotes de tasas
+    // 1. Obtener datos del socio y tasas
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
 
-    // 2. Calcular y generar PNG
+    // 2. Calcular y renderizar PNG
     const datosCalculados = calcularTasasCartelera(perfil, loteActual, loteAnterior);
     const pngBuffer = await generarCarteleraPNG(datosCalculados);
-    const base64Image = pngBuffer.toString('base64');
+    const pureBase64 = pngBuffer.toString('base64');
 
-    // 3. Determinar JID de destino (Si modo_prueba es true -> Grupo de Prueba, sino -> perfil.id_grupo)
+    // 3. Determinar JID del Grupo Destino
     const jidDestino = modo_prueba 
       ? JID_GRUPO_PRUEBA 
       : (perfil.id_grupo || JID_GRUPO_PRUEBA);
 
     const caption = `${modo_prueba ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${datosCalculados.nombre_socio}* — Lote: ${datosCalculados.lote_tasa}`;
 
-    // 4. Enviar a Evolution API (Asegura que si falla, eleva el error)
-    const evolutionResponse = await enviarMediaEvolution(jidDestino, base64Image, caption);
+    // 4. Enviar a Evolution API
+    const evolutionResult = await enviarMediaEvolution(jidDestino, pureBase64, caption);
 
     return res.json({
       success: true,
       id_grupo: jidDestino,
       nombre_socio: datosCalculados.nombre_socio,
-      base64: base64Image,
       modo_prueba: !!modo_prueba,
-      evolution: evolutionResponse
+      evolution: evolutionResult
     });
   } catch (error) {
-    console.error('[Error Controller Disparar]:', error);
+    console.error('[Error Controller Disparar]:', error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

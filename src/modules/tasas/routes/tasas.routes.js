@@ -10,7 +10,8 @@ import {
   traerBorradorHoo,
   guardarLoteSolo,
   publicarLoteSolo,
-  eliminarLotePorId
+  eliminarLotePorId,
+  reinterpretarNotificacionRemesas
 } from '../controllers/tasas.controller.js';
 
 

@@ -2,14 +2,14 @@ import { normalizarNumero, aplicarReglaPrecisionTasa } from '../../../utils/form
 
 const BANDERAS_MAP = {
   COP: 'co', PEN: 'pe', ARS: 'ar', BRL: 'br', MXN: 'mx', EUR: 'eu',
-  USD: 'us', USDT: 'us', PYG: 'py', VES: 've', CLP: 'cl', DOP: 'do',
+  USD: 'us', USDT: 'us', PYUSD: 'us', PYG: 'py', VES: 've', CLP: 'cl', DOP: 'do',
   CRC: 'cr', BOB: 'bo', ECU: 'ec', PAN: 'pa', CAD: 'ca'
 };
 
 const NOMBRES_PAIS = {
   COP: 'Colombia', PEN: 'Peru', ARS: 'Argentina', BRL: 'Brazil',
   MXN: 'Mexico', EUR: 'Europa', USD: 'EEUU-Zelle', USDT: 'Tether',
-  PYG: 'Paraguay', VES: 'Venezuela', CLP: 'Chile', DOP: 'Dominicana',
+  PYUSD: 'PayPal USD', PYG: 'Paraguay', VES: 'Venezuela', CLP: 'Chile', DOP: 'Dominicana',
   CRC: 'Costa Rica', BOB: 'Bolivia', ECU: 'Ecuador', PAN: 'Panama', CAD: 'Canada'
 };
 
@@ -37,12 +37,12 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
   const tarjetasPaises = [];
 
   for (const [code, config] of Object.entries(monedas)) {
-    if (!config || !config.activo) continue;
+    if (!config || config.activo === false) continue;
 
     const codeUpper = code.toUpperCase();
     const tasaBaseRaw = mapaTasasActuales[codeUpper];
 
-    if (tasaBaseRaw === undefined && !['USD', 'USDT'].includes(codeUpper)) continue;
+    if (tasaBaseRaw === undefined && !['USD', 'USDT', 'PYUSD', 'ECU', 'PAN'].includes(codeUpper)) continue;
 
     const tasaBasePais = normalizarNumero(tasaBaseRaw || 1.0);
     if (tasaBasePais === 0) continue;
@@ -53,11 +53,11 @@ export function calcularTasasCartelera(perfil, loteActual, loteAnterior = null) 
     // 3. TENDENCIA TRIANGULADA
     const tasaAnteriorRaw = mapaTasasAnteriores[codeUpper];
     let trend = 'equal';
-    
+
     if (tasaAnteriorRaw !== undefined) {
       const tasaBasePaisAnt = normalizarNumero(tasaAnteriorRaw);
       const crossBaseAnterior = tasaBasePaisAnt / baseSocioAnterior;
-      
+
       if (crossBaseActual > crossBaseAnterior) trend = 'up';
       else if (crossBaseActual < crossBaseAnterior) trend = 'down';
     }

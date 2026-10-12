@@ -1,6 +1,6 @@
 import pool from '../../../config/db.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
-import { calcularTasasCartelera } from '../services/calculo.service.js';
+import { calcularTasasCartelera } from '../services/calculator.service.js';
 
 const HOO_GLOBAL_RATES_URL = 'https://hoo.jairokov.com/global-rates';
 const JID_GRUPO_PRUEBA = process.env.JID_GRUPO_PRUEBA || '120363000000000000@g.us';

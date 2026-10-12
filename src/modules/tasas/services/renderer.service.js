@@ -17,10 +17,15 @@ const MAPA_BANDERAS_ISO = {
   BOB: 'bo', EUR: 'eu', ECU: 'ec', PAN: 'pa',
 };
 
+// Carga e inicialización en memoria única para velocidad máxima
 function obtenerFuente() {
   if (!fontBuffer) {
     const fontPath = path.join(process.cwd(), 'assets/fonts/Inter-Bold.ttf');
-    if (fs.existsSync(fontPath)) fontBuffer = fs.readFileSync(fontPath);
+    if (fs.existsSync(fontPath)) {
+      fontBuffer = fs.readFileSync(fontPath);
+    } else {
+      console.warn('⚠️ No se encontró Inter-Bold.ttf en assets/fonts/');
+    }
   }
   return fontBuffer;
 }
@@ -63,20 +68,27 @@ export async function generarCarteleraPNG(datosCalculados) {
 
   const totalTarjetas = datosCalculados.tarjetas_paises?.length || 0;
   const filas = Math.ceil(totalTarjetas / 2);
-  const calculatedHeight = 260 + filas * 170;
-  const finalHeight = Math.max(800, calculatedHeight);
+
+  // -----------------------------------------------------------------
+  // ALTURA DINÁMICA EXACTA:
+  // Header + Footer + Margen base = 260px
+  // Cada fila de países (2 tarjetas) = 170px
+  // Piso mínimo ajustado a 450px (evita el lienzo inflado de 800px)
+  // -----------------------------------------------------------------
+  const calculatedHeight = 260 + (filas * 170);
+  const finalHeight = Math.max(450, calculatedHeight);
 
   const svg = await satori(renderCarteleraTemplate(datosCalculados), {
     width: 1080,
     height: finalHeight,
-    fonts: [
+    fonts: fontData ? [
       {
         name: 'Inter',
         data: fontData,
         weight: 700,
         style: 'normal',
       },
-    ],
+    ] : [],
   });
 
   const resvg = new Resvg(svg, {

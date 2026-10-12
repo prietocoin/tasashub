@@ -348,41 +348,51 @@ const BANDERAS_EMOJI_FALLBACK = {
         : 'py-2.5 rounded-lg text-slate-400 hover:text-white text-center transition';
     }
 
-    function renderMonitorGrid(mapaTasas) {
-      const container = document.getElementById('gridMonitor');
-      borradorTasas = { ...mapaTasas };
+    // LISTA MASTER DE MONEDAS SOPORTADAS Y SUS VALORES POR DEFECTO
+const MONEDAS_DEFAULT = {
+  ARS: 0, BOB: 0, BRL: 0, CAD: 0, CLP: 0, COP: 0,
+  CRC: 0, DOP: 0, EUR: 0, MXN: 0, PEN: 0, PYG: 0,
+  VES: 0, USD: 1.00, USDT: 1.00, PYUSD: 1.20, ECU: 1.00, PAN: 1.00
+};
 
-      const clavesValidas = Object.keys(mapaTasas).filter(k => k !== 'ID' && k !== 'CREATED_AT');
+function renderMonitorGrid(mapaTasas) {
+  const container = document.getElementById('gridMonitor');
+  
+  // Fusiona los valores predeterminados con lo que devuelva la BD u HOO
+  borradorTasas = { ...MONEDAS_DEFAULT, ...mapaTasas };
 
-      container.innerHTML = clavesValidas.map(code => {
-        const val = mapaTasas[code];
-        const flagUrl = obtenerUrlBandera(code);
-        const emojiFallback = BANDERAS_EMOJI_FALLBACK[code] || '🌐';
+  // Filtra llaves de metadatos no numéricos
+  const clavesValidas = Object.keys(borradorTasas).filter(k => k !== 'ID' && k !== 'CREATED_AT');
 
-        return `
-          <div class="bg-slate-900/90 border border-borderDark rounded-xl p-3 space-y-2">
-            <div class="text-xs font-black text-purple-300 flex justify-between items-center">
-              <span class="flex items-center gap-1.5">
-                <img src="${flagUrl}" class="w-5 h-3.5 object-cover rounded border border-white/20" 
-                     onerror="this.onerror=null; this.remove(); document.getElementById('fallback-${code}').innerText='${emojiFallback}';">
-                <span id="fallback-${code}"></span>
-                ${code}
-              </span>
-            </div>
-            <div class="text-[10px] text-slate-400 font-bold flex justify-between">
-              <span>PROD:</span>
-              <span class="text-slate-200">${val}</span>
-            </div>
-            <div class="space-y-1">
-              <span class="text-[9px] font-extrabold text-emerald-400 tracking-wider uppercase block">NUEVO LOTE</span>
-              <input type="number" step="any" value="${val}" oninput="actualizarValorBorrador('${code}', this.value)" 
-                class="w-full bg-brandDark border border-emerald-500/40 text-emerald-300 font-bold text-xs p-2 rounded-lg outline-none focus:border-emerald-400">
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+  container.innerHTML = clavesValidas.map(code => {
+    const valProd = mapaTasas[code] !== undefined ? mapaTasas[code] : (MONEDAS_DEFAULT[code] || 0);
+    const valBorrador = borradorTasas[code];
+    const flagUrl = obtenerUrlBandera(code);
+    const emojiFallback = BANDERAS_EMOJI_FALLBACK[code] || '🌐';
 
+    return `
+      <div class="bg-slate-900/90 border border-borderDark rounded-xl p-3 space-y-2">
+        <div class="text-xs font-black text-purple-300 flex justify-between items-center">
+          <span class="flex items-center gap-1.5">
+            <img src="${flagUrl}" class="w-5 h-3.5 object-cover rounded border border-white/20" 
+                 onerror="this.onerror=null; this.remove(); document.getElementById('fallback-${code}').innerText='${emojiFallback}';">
+            <span id="fallback-${code}"></span>
+            ${code}
+          </span>
+        </div>
+        <div class="text-[10px] text-slate-400 font-bold flex justify-between">
+          <span>PROD:</span>
+          <span class="text-slate-200">${valProd}</span>
+        </div>
+        <div class="space-y-1">
+          <span class="text-[9px] font-extrabold text-emerald-400 tracking-wider uppercase block">NUEVO LOTE</span>
+          <input type="number" step="any" value="${valBorrador}" oninput="actualizarValorBorrador('${code}', this.value)" 
+            class="w-full bg-brandDark border border-emerald-500/40 text-emerald-300 font-bold text-xs p-2 rounded-lg outline-none focus:border-emerald-400">
+        </div>
+      </div>
+    `;
+  }).join('');
+}
     function actualizarValorBorrador(code, valor) {
       borradorTasas[code] = parseFloat(valor) || 0;
     }

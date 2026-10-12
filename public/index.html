@@ -552,6 +552,33 @@
     showToast('❌ Error de conexión al servidor');
   }
 }
+
+    // REGISTRO DE PWA Y SERVICE WORKER
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW Registration error:', e));
+  });
+}
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Muestra el botón de instalación si existe en el Header
+  const btnInstall = document.getElementById('btnInstallPWA');
+  if (btnInstall) btnInstall.classList.remove('hidden');
+});
+
+async function instalarPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    const btnInstall = document.getElementById('btnInstallPWA');
+    if (btnInstall) btnInstall.classList.add('hidden');
+  }
+  deferredPrompt = null;
+}
   </script>
 </body>
 </html>

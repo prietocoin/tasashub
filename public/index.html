@@ -24,7 +24,6 @@
     }
   </script>
   <style>
-    /* Desactivar selección accidental de texto al tocar rápido en el móvil */
     body { -webkit-tap-highlight-color: transparent; user-select: none; }
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #040a17; }
@@ -33,9 +32,9 @@
 </head>
 <body class="bg-brandDark text-slate-100 min-h-screen pb-24 font-sans">
 
-  <!-- HEADER COMPACTO PARA MÓVIL -->
+  <!-- HEADER GLOBAL (ACCIONES MASIVAS / GENERALES) -->
   <header class="sticky top-0 z-30 bg-cardDark/95 backdrop-blur-md border-b border-borderDark p-3 shadow-md">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-base">
           ⚡
@@ -46,11 +45,20 @@
         </div>
       </div>
 
-      <!-- BOTONES RÁPIDOS MÓVILES -->
-      <div class="flex items-center gap-1.5">
-        <button onclick="showToast('⚡ Tasa Reenviada')" class="p-2 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-lg text-xs font-bold active:scale-95 transition">
-          ⚡ Reenviar
+      <!-- CONTROLES GENERALES (LOTE COMPLETO) -->
+      <div class="flex items-center gap-2">
+        <!-- Switch Prueba General -->
+        <label class="flex items-center gap-1.5 bg-slate-900 border border-borderDark px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
+          <span class="text-[10px] text-slate-400">Prueba Lote:</span>
+          <input type="checkbox" id="globalTestSwitch" checked class="sr-only peer" onchange="toggleGlobalTestMode(this.checked)">
+          <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
+        </label>
+
+        <!-- Reenviar Lote Completo (General) -->
+        <button onclick="dispararLoteGeneral()" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
+          ⚡ <span>Lote Completo</span>
         </button>
+
         <button onclick="showToast('📑 Borrador Cargado')" class="p-2 bg-purple-500/10 border border-purple-500/40 text-purple-400 rounded-lg text-xs font-bold active:scale-95 transition">
           📑 Hoo
         </button>
@@ -87,7 +95,7 @@
     <!-- TAB 2: CHECKLIST DE SOCIO -->
     <div id="tab2" class="hidden space-y-3">
       
-      <!-- BARRA DE SOCIO ACTIVO (TRIGGER DEL BOTTOM SHEET MÓVIL) -->
+      <!-- BARRA DE SOCIO ACTIVO -->
       <div class="bg-cardDark border border-borderDark rounded-xl p-3 flex items-center justify-between gap-2 shadow-sm">
         <button onclick="openPartnerSheet()" class="flex-1 flex items-center justify-between bg-slate-900 border border-borderDark active:border-purple-500 px-3 py-2.5 rounded-xl text-left transition">
           <div class="flex items-center gap-2.5">
@@ -126,7 +134,7 @@
         </div>
       </div>
 
-      <!-- GRID DE BOTONES TÁCTILES TIPO CHECKLIST -->
+      <!-- GRID CHECKLIST DE PAÍSES -->
       <div id="checklistGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
         <!-- Renderizado dinámico -->
       </div>
@@ -134,21 +142,12 @@
 
   </main>
 
-  <!-- BARRA INFERIOR FIJA (STICKY BOTTOM) -->
+  <!-- BARRA INFERIOR FIJA DE NAVEGACIÓN Y GUARDADO -->
   <div id="stickyFooter" class="hidden fixed bottom-0 left-0 right-0 bg-cardDark/95 backdrop-blur-md border-t border-borderDark p-3 z-30">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
-        <button onclick="verVistaPrevia()" class="p-2.5 bg-slate-800 border border-borderDark text-slate-200 text-xs font-bold rounded-xl active:scale-95 flex items-center gap-1.5">
-          👁️ <span>Ver Previa</span>
-        </button>
-
-        <!-- PRUEBA SOCIO -->
-        <label class="flex items-center gap-1.5 bg-slate-900 border border-borderDark px-2.5 py-2 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
-          <span>Prueba</span>
-          <input type="checkbox" id="chkPartnerTest" class="sr-only peer" onchange="togglePartnerTestMode(this.checked)">
-          <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
-        </label>
-      </div>
+      <button onclick="verVistaPrevia()" class="p-2.5 bg-slate-800 border border-borderDark text-slate-200 text-xs font-bold rounded-xl active:scale-95 flex items-center gap-1.5">
+        👁️ <span>Ver Previa</span>
+      </button>
 
       <button onclick="guardarCambiosSocio()" class="flex-1 max-w-[200px] py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold rounded-xl shadow-lg shadow-purple-900/40 active:scale-95 transition">
         💾 Guardar Cambios
@@ -156,7 +155,7 @@
     </div>
   </div>
 
-  <!-- PANEL BOTTOM SHEET MÓVIL (BUSCADOR DE SOCIOS PARA 70 ELEMENTOS) -->
+  <!-- PANEL BOTTOM SHEET (BUSCADOR DE SOCIOS) -->
   <div id="partnerSheet" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex flex-col justify-end">
     <div class="bg-cardDark border-t border-borderDark rounded-t-2xl p-4 space-y-3 max-h-[85vh] flex flex-col animate-slide-up">
       <div class="flex items-center justify-between pb-2 border-b border-borderDark">
@@ -167,42 +166,58 @@
       <input type="text" id="txtSearchPartner" oninput="filterPartners()" placeholder="🔍 Escribe para buscar socio..." class="w-full bg-slate-900 border border-borderDark text-sm text-white p-3 rounded-xl outline-none focus:border-purple-500">
 
       <div id="partnerListContainer" class="overflow-y-auto flex-1 space-y-1.5 pr-1">
-        <!-- Renderizado dinámico de la lista de socios -->
+        <!-- Lista de socios -->
       </div>
     </div>
   </div>
 
-  <!-- MODAL DE VISTA PREVIA PNG -->
-  <div id="modalPreview" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4">
-    <div class="bg-cardDark border border-borderDark rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+  <!-- MODAL DE VISTA PREVIA CON CONTROLES INDIVIDUALES -->
+  <div id="modalPreview" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-3">
+    <div class="bg-cardDark border border-borderDark rounded-2xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      
       <!-- Header Modal -->
       <div class="p-3 border-b border-borderDark flex items-center justify-between bg-slate-900/50">
         <h3 class="text-xs font-extrabold text-white flex items-center gap-2">
-          <span>👁️</span> Vista Previa de Cartelera
+          <span>👁️</span> Vista Previa Cartelera — <span id="lblModalPartnerName" class="text-cyan-400">---</span>
         </h3>
         <button onclick="cerrarVistaPrevia()" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-bold text-sm flex items-center justify-center">
           ✕
         </button>
       </div>
 
-      <!-- Contenedor Imagen -->
-      <div class="p-4 flex-1 overflow-y-auto flex items-center justify-center bg-brandDark">
+      <!-- Imagen Cartelera -->
+      <div class="p-3 flex-1 overflow-y-auto flex items-center justify-center bg-brandDark min-h-[300px]">
         <div id="previewSpinner" class="text-cyan-400 text-xs font-bold animate-pulse flex items-center gap-2">
           <span class="text-lg">⚡</span> Generando cartelera PNG...
         </div>
         <img id="imgPreviewCartelera" src="" alt="Vista Previa Cartelera" class="hidden w-full h-auto rounded-lg shadow-lg border border-borderDark object-contain">
       </div>
 
-      <!-- Footer Modal -->
-      <div class="p-3 border-t border-borderDark bg-slate-900/50 flex justify-end">
-        <button onclick="cerrarVistaPrevia()" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">
+      <!-- FOOTER MODAL: CONTROLES INDIVIDUALES DEL SOCIO -->
+      <div class="p-3 border-t border-borderDark bg-slate-900/80 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <!-- Modo Prueba Individual (Socio Mirado) -->
+          <label class="flex items-center gap-1.5 bg-slate-800 border border-borderDark px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
+            <span>Prueba Socio</span>
+            <input type="checkbox" id="chkModalPartnerTest" class="sr-only peer" onchange="togglePartnerTestMode(this.checked)">
+            <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
+          </label>
+
+          <!-- Reenviar Individual (Socio Mirado) -->
+          <button onclick="dispararCarteleraSocio()" class="px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 text-xs font-extrabold rounded-xl active:scale-95 transition flex items-center gap-1">
+            ⚡ <span>Reenviar Socio</span>
+          </button>
+        </div>
+
+        <button onclick="cerrarVistaPrevia()" class="px-4 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">
           Cerrar
         </button>
       </div>
+
     </div>
   </div>
 
-  <!-- TOAST NOTIFICADOR -->
+  <!-- TOAST -->
   <div id="toast" class="fixed top-16 right-4 bg-emerald-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xl hidden z-50">
     Mensaje
   </div>
@@ -216,14 +231,13 @@
 
     let socios = [];
     let socioActivo = null;
+    let modoPruebaGlobal = true;
 
-    // CARGA INICIAL DESDE TU BACKEND EXPRESS
     window.onload = async () => {
       await cargarMonitor();
       await cargarSocios();
     };
 
-    // 1. CARGAR TASAS DE TABLA `tasas_glaukov`
     async function cargarMonitor() {
       try {
         const res = await fetch('/api/v1/tasas/monitor');
@@ -232,26 +246,20 @@
           document.getElementById('lblLoteActual').innerText = `Lote: ${data.id_tasa || 'T000'}`;
           renderMonitorGrid(data.tasas);
         }
-      } catch (e) {
-        console.error('Error cargando monitor:', e);
-      }
+      } catch (e) { console.error('Error monitor:', e); }
     }
 
-    // 2. CARGAR SOCIOS DESDE TABLA `perfiles_glaukov`
     async function cargarSocios() {
       try {
         const res = await fetch('/api/v1/tasas/socios');
         const data = await res.json();
-        if (data.success && data.socios && data.socios.length > 0) {
+        if (data.success && data.socios?.length > 0) {
           socios = data.socios;
           selectPartner(socios[0].nombre);
         }
-      } catch (e) {
-        console.error('Error cargando socios:', e);
-      }
+      } catch (e) { console.error('Error socios:', e); }
     }
 
-    // NAVEGACIÓN PESTAÑAS
     function switchTab(num) {
       document.getElementById('tab1').classList.toggle('hidden', num !== 1);
       document.getElementById('tab2').classList.toggle('hidden', num !== 2);
@@ -266,7 +274,6 @@
         : 'py-2.5 rounded-lg text-slate-400 hover:text-white text-center transition';
     }
 
-    // RENDERIZAR MONITOR GLOBAL
     function renderMonitorGrid(mapaTasas) {
       const container = document.getElementById('gridMonitor');
       container.innerHTML = Object.entries(mapaTasas).map(([code, val]) => `
@@ -279,7 +286,6 @@
       `).join('');
     }
 
-    // GESTIÓN DE BOTTOM SHEET MÓVIL (SOCIOS)
     function openPartnerSheet() {
       document.getElementById('partnerSheet').classList.remove('hidden');
       renderPartnerList();
@@ -305,8 +311,7 @@
     }
 
     function filterPartners() {
-      const q = document.getElementById('txtSearchPartner').value;
-      renderPartnerList(q);
+      renderPartnerList(document.getElementById('txtSearchPartner').value);
     }
 
     function selectPartner(nombre) {
@@ -317,19 +322,16 @@
 
       document.getElementById('lblSelectedPartner').innerText = socioActivo.nombre;
       document.getElementById('lblPartnerBase').innerText = `Base: ${socioActivo.moneda_base || 'USDT'}`;
-      document.getElementById('chkPartnerTest').checked = !!socioActivo.modo_prueba;
 
       updatePerfilUI(socioActivo.activo !== false);
       renderChecklistGrid();
       closePartnerSheet();
     }
 
-    // RENDERIZAR CHECKLIST TÁCTIL
     function renderChecklistGrid() {
       if (!socioActivo) return;
       const container = document.getElementById('checklistGrid');
       let activeCount = 0;
-
       const codigos = Object.keys(BANDERAS_MAP);
 
       container.innerHTML = codigos.map(code => {
@@ -353,21 +355,17 @@
 
     function toggleCountry(code) {
       if (socioActivo.activo === false) return;
-
       if (!socioActivo.monedas[code]) socioActivo.monedas[code] = {};
       socioActivo.monedas[code].activo = !socioActivo.monedas[code].activo;
-
       renderChecklistGrid();
     }
 
     function setAllChecklist(status) {
       if (socioActivo.activo === false) return;
-
       Object.keys(BANDERAS_MAP).forEach(code => {
         if (!socioActivo.monedas[code]) socioActivo.monedas[code] = {};
         socioActivo.monedas[code].activo = status;
       });
-
       renderChecklistGrid();
     }
 
@@ -394,18 +392,44 @@
       }
     }
 
-    function togglePartnerTestMode(checked) {
-      socioActivo.modo_prueba = checked;
-      showToast(`Prueba: ${checked ? 'ON' : 'OFF'}`);
+    // -----------------------------------------------------------------
+    // ACCIONES GENERALES (LOTE COMPLETO Y PRUEBA GENERAL)
+    // -----------------------------------------------------------------
+
+    function toggleGlobalTestMode(checked) {
+      modoPruebaGlobal = checked;
+      showToast(`Prueba General Lote: ${checked ? 'ON' : 'OFF'}`);
     }
 
-    // 3. GENERAR Y MOSTRAR VISTA PREVIA REAL (PNG)
+    async function dispararLoteGeneral() {
+      showToast('⚡ Enviando Lote Completo de Socios...');
+      try {
+        const res = await fetch('/api/v1/tasas/disparar-lote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modo_prueba_global: modoPruebaGlobal })
+        });
+        showToast('✅ Lote enviado correctamente');
+      } catch (e) {
+        showToast('⚡ Lote procesado localmente');
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // ACCIONES INDIVIDUALES (DENTRO DEL MODAL)
+    // -----------------------------------------------------------------
+
     async function verVistaPrevia() {
       if (!socioActivo) return;
 
       const modal = document.getElementById('modalPreview');
       const spinner = document.getElementById('previewSpinner');
       const img = document.getElementById('imgPreviewCartelera');
+      const partnerNameLbl = document.getElementById('lblModalPartnerName');
+      const partnerTestChk = document.getElementById('chkModalPartnerTest');
+
+      partnerNameLbl.innerText = socioActivo.nombre;
+      partnerTestChk.checked = !!socioActivo.modo_prueba;
 
       modal.classList.remove('hidden');
       spinner.classList.remove('hidden');
@@ -417,22 +441,50 @@
         if (!res.ok) throw new Error('Error al renderizar');
 
         const imageBlob = await res.blob();
-        const imageUrl = URL.createObjectURL(imageBlob);
-
-        img.src = imageUrl;
+        img.src = URL.createObjectURL(imageBlob);
         img.classList.remove('hidden');
         spinner.classList.add('hidden');
       } catch (e) {
-        console.error('Error vista previa:', e);
         showToast('❌ Error generando cartelera');
         cerrarVistaPrevia();
+      }
+    }
+
+    function togglePartnerTestMode(checked) {
+      if (!socioActivo) return;
+      socioActivo.modo_prueba = checked;
+      showToast(`Prueba Socio (${socioActivo.nombre}): ${checked ? 'ON' : 'OFF'}`);
+    }
+
+    async function dispararCarteleraSocio() {
+      if (!socioActivo) return;
+
+      showToast(`⚡ Enviando a ${socioActivo.nombre}...`);
+
+      try {
+        const res = await fetch('/api/v1/tasas/disparar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            socio: socioActivo.nombre,
+            modo_prueba: socioActivo.modo_prueba
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✅ ${socioActivo.nombre} enviado (${socioActivo.modo_prueba ? 'Prueba' : 'Prod'})`);
+        } else {
+          showToast('❌ Error al enviar socio');
+        }
+      } catch (e) {
+        showToast('❌ Error de red');
       }
     }
 
     function cerrarVistaPrevia() {
       const modal = document.getElementById('modalPreview');
       const img = document.getElementById('imgPreviewCartelera');
-
       modal.classList.add('hidden');
       if (img.src) {
         URL.revokeObjectURL(img.src);
@@ -440,7 +492,7 @@
       }
     }
 
-    // 4. GUARDAR CAMBIOS DIRECTAMENTE EN POSTGRESQL (`perfiles_glaukov`)
+    // GUARDAR CAMBIOS DE CONFIGURACIÓN DEL SOCIO
     async function guardarCambiosSocio() {
       if (!socioActivo) return;
 

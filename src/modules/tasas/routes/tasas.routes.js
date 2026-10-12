@@ -3,6 +3,7 @@ import {
   calcularTasas,
   renderCartelera,
   dispararCartelera,
+  dispararLoteGeneral,
   obtenerTasasMonitor,
   obtenerListaSocios,
   actualizarMonedasSocio
@@ -15,12 +16,11 @@ router.get('/monitor', obtenerTasasMonitor);
 router.get('/socios', obtenerListaSocios);
 router.put('/socios/:socio', actualizarMonedasSocio);
 
-// Endpoints Producción Existentes
+// Endpoints Producción Existentes y Disparo Masivo
 router.get('/calcular/:socio', calcularTasas);
 router.get('/render/:socio', renderCartelera);
 router.post('/render', renderCartelera);
 router.post('/disparar', dispararCartelera);
 router.post('/disparar-lote', dispararLoteGeneral);
-
 
 export default router;

@@ -280,19 +280,20 @@
   </div>
 
   <script>
-    // MAPEO A ARCHIVOS DE BANDERAS PNG Y EMOJIS DE RESPALDO
-    const MAPA_BANDERAS_ISO = {
-      ARS: 'ar', BRL: 'br', CLP: 'cl', COP: 'co', MXN: 'mx',
-      PEN: 'pe', PYG: 'py', VES: 've', USD: 'us', USDT: 'us',
-      BOB: 'bo', EUR: 'eu', ECU: 'ec', PAN: 'pa', CRC: 'crc',
-      CAD: 'ca', DOP: 'do'
-    };
+  // MAPEO ISO DE BANDERAS
+const MAPA_BANDERAS_ISO = {
+  ARS: 'ar', BRL: 'br', CLP: 'cl', COP: 'co', MXN: 'mx',
+  PEN: 'pe', PYG: 'py', VES: 've', USD: 'us', USDT: 'us',
+  PYUSD: 'us', BOB: 'bo', EUR: 'eu', ECU: 'ec', PAN: 'pa',
+  CRC: 'cr', CAD: 'ca', DOP: 'do'
+};
 
-    const BANDERAS_EMOJI_FALLBACK = {
-      COP: '🇨🇴', PEN: '🇵🇪', ARS: '🇦🇷', BRL: '🇧🇷', MXN: '🇲🇽', EUR: '🇪🇺',
-      USD: '🇺🇸', USDT: '🪙', PYG: '🇵🇾', VES: '🇻🇪', CLP: '🇨🇱', DOP: '🇩🇴',
-      CRC: '🇨🇷', BOB: '🇧🇴', ECU: '🇪🇨', PAN: '🇵🇦', CAD: '🇨🇦'
-    };
+// FALLBACK DE EMOJIS SI NO EXISTE LA IMAGEN
+const BANDERAS_EMOJI_FALLBACK = {
+  COP: '🇨🇴', PEN: '🇵🇪', ARS: '🇦🇷', BRL: '🇧🇷', MXN: '🇲🇽', EUR: '🇪🇺',
+  USD: '🇺🇸', USDT: '🪙', PYUSD: '💵', PYG: '🇵🇾', VES: '🇻🇪', CLP: '🇨🇱',
+  DOP: '🇩🇴', CRC: '🇨🇷', BOB: '🇧🇴', ECU: '🇪🇨', PAN: '🇵🇦', CAD: '🇨🇦'
+};
 
     let socios = [];
     let socioActivo = null;

@@ -89,7 +89,7 @@ function calcularTasasCartelera(socio, loteActual, loteAnterior) {
 // CONTROLADORES / ENDPOINTS
 // =============================================================
 
-// 1. OBTENER MONITOR GLOBAL (ÚLTIMO LOTE DE tasas_glaukov)
+// 1. OBTENER MONITOR GLOBAL
 export async function obtenerTasasMonitor(req, res) {
   try {
     const result = await pool.query('SELECT * FROM tasas_glaukov ORDER BY id DESC LIMIT 1');
@@ -104,33 +104,27 @@ export async function obtenerTasasMonitor(req, res) {
       tasas: tasasObj
     });
   } catch (error) {
-    console.error('[Error obtenerTasasMonitor]:', error.message);
+    // IMPRIMIR DETALLE COMPLETO DEL ERROR EN NODE
+    console.error('❌ [DETALLE ERROR MONITOR]:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
 
-// 2. LISTAR TODOS LOS SOCIOS (perfiles_glaukov o perfiles)
+// 2. LISTAR TODOS LOS SOCIOS
 export async function obtenerListaSocios(req, res) {
   try {
-    let result;
-    try {
-      result = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
-    } catch (e) {
-      result = await pool.query('SELECT * FROM perfiles ORDER BY nombre ASC');
-    }
-
+    const result = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
     const sociosNormalizados = result.rows.map(s => ({
       ...s,
       monedas: typeof s.monedas === 'string' ? JSON.parse(s.monedas) : (s.monedas || {})
     }));
-
     return res.json({ success: true, socios: sociosNormalizados });
   } catch (error) {
-    console.error('[Error obtenerListaSocios]:', error.message);
+    // IMPRIMIR DETALLE COMPLETO DEL ERROR EN NODE
+    console.error('❌ [DETALLE ERROR SOCIOS]:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
-
 // 3. ACTUALIZAR CONFIGURACIÓN DE UN SOCIO
 export async function actualizarMonedasSocio(req, res) {
   try {

@@ -29,7 +29,7 @@ function normalizarParaRenderer(datosCalculados) {
 }
 
 // -------------------------------------------------------------
-// HELPER: Enviar Imagen base64 vía Evolution API
+// HELPER: Enviar Imagen base64 vía Evolution API (CORREGIDO)
 // -------------------------------------------------------------
 async function enviarMediaEvolution(jid, base64Data, caption) {
   if (!EVOLUTION_API_URL || !EVOLUTION_INSTANCE) {
@@ -38,23 +38,37 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
   }
 
   const endpoint = `${EVOLUTION_API_URL}/message/sendMedia/${EVOLUTION_INSTANCE}`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': EVOLUTION_API_KEY
-    },
-    body: JSON.stringify({
-      number: jid,
-      mediaMessage: {
-        mediatype: 'image',
-        caption: caption,
-        media: base64Data
-      }
-    })
-  });
+  
+  // 1. Asegurar formato Data URI
+  const formattedMedia = base64Data.startsWith('data:') 
+    ? base64Data 
+    : `data:image/png;base64,${base64Data}`;
 
-  return await response.json();
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': EVOLUTION_API_KEY
+      },
+      body: JSON.stringify({
+        number: jid,
+        mediaMessage: {
+          mediatype: 'image',
+          fileName: 'cartelera.png',
+          caption: caption,
+          media: formattedMedia
+        }
+      })
+    });
+
+    const resData = await response.json();
+    console.log(`[EVOLUTION API RES -> ${jid}]:`, JSON.stringify(resData));
+    return resData;
+  } catch (err) {
+    console.error(`[EVOLUTION API ERROR -> ${jid}]:`, err.message);
+    throw err;
+  }
 }
 
 // =============================================================
@@ -327,15 +341,17 @@ export async function dispararCartelera(req, res) {
     const pngBuffer = await generarCarteleraPNG(datosCalculados);
     const base64Image = pngBuffer.toString('base64');
 
-    const jidDestino = modo_prueba
+    // MODO PRUEBA / GRUPO DESTINO
+    const isTestMode = modo_prueba !== undefined ? modo_prueba : socioData.modo_prueba;
+    const jidDestino = isTestMode
       ? JID_GRUPO_PRUEBA
       : (socioData.id_grupo || JID_GRUPO_PRUEBA);
 
-    const caption = `${modo_prueba ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${socioData.nombre}* — Lote: ${loteActual.id_tasa || 'T000'}`;
+    const caption = `${isTestMode ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${socioData.nombre}* — Lote: ${loteActual.id_tasa || 'T000'}`;
 
-    await enviarMediaEvolution(jidDestino, base64Image, caption);
+    const evoRes = await enviarMediaEvolution(jidDestino, base64Image, caption);
 
-    return res.json({ success: true, socio: socioData.nombre });
+    return res.json({ success: true, socio: socioData.nombre, evolutionResponse: evoRes });
   } catch (error) {
     console.error('[Error dispararCartelera]:', error.message);
     return res.status(500).json({ success: false, error: error.message });

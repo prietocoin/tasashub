@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TasasHub Mobile - Gestión Unificada</title>
+  <title>TasasHub Engine - Control Global & Socios</title>
+
+  <!-- FAVICON Y LOGOS PWA -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1326'/><text y='.9em' x='15' font-size='75'>⚡</text></svg>">
+  <link rel="shortcut icon" href="https://cdn-icons-png.flaticon.com/512/888/888857.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0b1326">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TasasHub">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/888/888857.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -32,37 +44,23 @@
 </head>
 <body class="bg-brandDark text-slate-100 min-h-screen pb-24 font-sans">
 
-  <!-- HEADER GLOBAL (ACCIONES MASIVAS / GENERALES) -->
+  <!-- HEADER GLOBAL -->
   <header class="sticky top-0 z-30 bg-cardDark/95 backdrop-blur-md border-b border-borderDark p-3 shadow-md">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-base">
+        <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-base shadow-md shadow-blue-500/10">
           ⚡
         </div>
         <div>
           <h1 class="text-sm font-extrabold text-white leading-tight">TasasHub Engine</h1>
-          <p class="text-[10px] text-slate-400">Control Global & Socios</p>
+          <p class="text-[10px] text-slate-400">Control Global &amp; Socios</p>
         </div>
       </div>
 
-      <!-- CONTROLES GENERALES (LOTE COMPLETO) -->
-      <div class="flex items-center gap-2">
-        <!-- Switch Prueba General -->
-        <label class="flex items-center gap-1.5 bg-slate-900 border border-borderDark px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
-          <span class="text-[10px] text-slate-400">Prueba Lote:</span>
-          <input type="checkbox" id="globalTestSwitch" checked class="sr-only peer" onchange="toggleGlobalTestMode(this.checked)">
-          <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
-        </label>
-
-        <!-- Reenviar Lote Completo (General) -->
-        <button onclick="dispararLoteGeneral()" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
-          ⚡ <span>Lote Completo</span>
-        </button>
-
-        <button onclick="showToast('📑 Borrador Cargado')" class="p-2 bg-purple-500/10 border border-purple-500/40 text-purple-400 rounded-lg text-xs font-bold active:scale-95 transition">
-          📑 Hoo
-        </button>
-      </div>
+      <!-- BOTÓN INSTALAR PWA SI ESTÁ DISPONIBLE EN EL NAVEGADOR -->
+      <button id="btnInstallPWA" onclick="instalarPWA()" class="hidden px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
+        📲 <span>Instalar App</span>
+      </button>
     </div>
   </header>
 
@@ -80,15 +78,44 @@
 
     <!-- TAB 1: MONITOR GLOBAL -->
     <div id="tab1" class="space-y-3">
-      <div class="flex items-center justify-between text-xs px-1">
-        <span class="font-bold text-emerald-400 tracking-wider">● PROD VS. NUEVO LOTE</span>
-        <span id="lblLoteActual" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full text-[11px]">
-          Lote: --
-        </span>
-      </div>
+      <div class="bg-cardDark border border-borderDark rounded-2xl p-3 shadow-xl space-y-3">
+        <div class="flex items-center justify-between text-xs pb-2 border-b border-borderDark">
+          <span class="font-bold text-emerald-400 tracking-wider flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            PROD VS. NUEVO LOTE
+          </span>
+          <span id="lblLoteActual" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full text-[11px]">
+            Lote: --
+          </span>
+        </div>
 
-      <div id="gridMonitor" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-        <!-- Carga dinámica vía API -->
+        <div id="gridMonitor" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+          <!-- Carga dinámica vía API -->
+        </div>
+
+        <!-- ACCIONES Y CONTROLES DEL MONITOR GLOBAL (PIE DEL PANEL) -->
+        <div class="pt-3 border-t border-borderDark/80 flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/40 p-2.5 rounded-xl">
+          <div class="text-[11px] font-bold text-slate-400">Acciones Lote Completo:</div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Switch Prueba Lote -->
+            <label class="flex items-center gap-1.5 bg-slate-800 border border-borderDark px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
+              <span class="text-[10px] text-slate-400">Prueba Lote:</span>
+              <input type="checkbox" id="globalTestSwitch" checked class="sr-only peer" onchange="toggleGlobalTestMode(this.checked)">
+              <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
+            </label>
+
+            <!-- Reenviar Lote Completo -->
+            <button onclick="dispararLoteGeneral()" class="px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
+              ⚡ <span>Lote Completo</span>
+            </button>
+
+            <!-- Hook -->
+            <button onclick="showToast('📑 Borrador Cargado')" class="px-3 py-1.5 bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
+              📑 <span>Hoo</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -119,7 +146,7 @@
         ⚠️ Perfil inactivo. Actívalo con el botón "ON" para modificar monedas.
       </div>
 
-      <!-- CONTADORES Y ACCIONES MÓVILES -->
+      <!-- CONTADORES Y ACCIONES CHECKLIST -->
       <div id="checklistControls" class="flex items-center justify-between text-xs px-1">
         <div class="text-slate-400 text-[11px]">
           Activos: <strong id="lblActiveCount" class="text-cyan-400">0</strong> / <span id="lblTotalCount">0</span>
@@ -142,7 +169,7 @@
 
   </main>
 
-  <!-- BARRA INFERIOR FIJA DE NAVEGACIÓN Y GUARDADO -->
+  <!-- BARRA INFERIOR FIJA DE GUARDADO (SOLO EN TAB 2) -->
   <div id="stickyFooter" class="hidden fixed bottom-0 left-0 right-0 bg-cardDark/95 backdrop-blur-md border-t border-borderDark p-3 z-30">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
       <button onclick="verVistaPrevia()" class="p-2.5 bg-slate-800 border border-borderDark text-slate-200 text-xs font-bold rounded-xl active:scale-95 flex items-center gap-1.5">
@@ -155,23 +182,23 @@
     </div>
   </div>
 
-  <!-- PANEL BOTTOM SHEET (BUSCADOR DE SOCIOS) -->
+  <!-- BOTTOM SHEET: BUSCADOR DE SOCIOS -->
   <div id="partnerSheet" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex flex-col justify-end">
-    <div class="bg-cardDark border-t border-borderDark rounded-t-2xl p-4 space-y-3 max-h-[85vh] flex flex-col animate-slide-up">
+    <div class="bg-cardDark border-t border-borderDark rounded-t-2xl p-4 space-y-3 max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between pb-2 border-b border-borderDark">
-        <h3 class="text-sm font-extrabold text-white">Seleccionar Socio (70)</h3>
+        <h3 class="text-sm font-extrabold text-white">Seleccionar Socio</h3>
         <button onclick="closePartnerSheet()" class="p-1 text-slate-400 font-bold text-lg">✕</button>
       </div>
 
       <input type="text" id="txtSearchPartner" oninput="filterPartners()" placeholder="🔍 Escribe para buscar socio..." class="w-full bg-slate-900 border border-borderDark text-sm text-white p-3 rounded-xl outline-none focus:border-purple-500">
 
       <div id="partnerListContainer" class="overflow-y-auto flex-1 space-y-1.5 pr-1">
-        <!-- Lista de socios -->
+        <!-- Lista de socios dinámicas -->
       </div>
     </div>
   </div>
 
-  <!-- MODAL DE VISTA PREVIA CON CONTROLES INDIVIDUALES -->
+  <!-- MODAL DE VISTA PREVIA Y ACCIONES INDIVIDUALES DEL SOCIO -->
   <div id="modalPreview" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-3">
     <div class="bg-cardDark border border-borderDark rounded-2xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
       
@@ -185,40 +212,47 @@
         </button>
       </div>
 
-      <!-- Imagen Cartelera -->
-      <div class="p-3 flex-1 overflow-y-auto flex items-center justify-center bg-brandDark min-h-[300px]">
+      <!-- Contenedor Imagen Cartelera -->
+      <div class="p-3 flex-1 overflow-y-auto flex items-center justify-center bg-brandDark min-h-[280px]">
         <div id="previewSpinner" class="text-cyan-400 text-xs font-bold animate-pulse flex items-center gap-2">
           <span class="text-lg">⚡</span> Generando cartelera PNG...
         </div>
         <img id="imgPreviewCartelera" src="" alt="Vista Previa Cartelera" class="hidden w-full h-auto rounded-lg shadow-lg border border-borderDark object-contain">
       </div>
 
-      <!-- FOOTER MODAL: CONTROLES INDIVIDUALES DEL SOCIO -->
-      <div class="p-3 border-t border-borderDark bg-slate-900/80 flex items-center justify-between gap-2">
+      <!-- FOOTER MODAL: CONTROLES MÓVILES E INDIVIDUALES -->
+      <div class="p-3 border-t border-borderDark bg-slate-900/80 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-          <!-- Modo Prueba Individual (Socio Mirado) -->
+          <!-- Switch Prueba Individual Socio -->
           <label class="flex items-center gap-1.5 bg-slate-800 border border-borderDark px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
             <span>Prueba Socio</span>
             <input type="checkbox" id="chkModalPartnerTest" class="sr-only peer" onchange="togglePartnerTestMode(this.checked)">
             <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
           </label>
 
-          <!-- Reenviar Individual (Socio Mirado) -->
+          <!-- Reenviar Socio -->
           <button onclick="dispararCarteleraSocio()" class="px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 text-xs font-extrabold rounded-xl active:scale-95 transition flex items-center gap-1">
             ⚡ <span>Reenviar Socio</span>
           </button>
         </div>
 
-        <button onclick="cerrarVistaPrevia()" class="px-4 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">
-          Cerrar
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- BOTÓN DESCARGAR EN EL TELÉFONO -->
+          <button onclick="descargarCarteleraPNG()" class="px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 text-xs font-extrabold rounded-xl active:scale-95 transition flex items-center gap-1">
+            ⬇️ <span>Descargar</span>
+          </button>
+
+          <button onclick="cerrarVistaPrevia()" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">
+            Cerrar
+          </button>
+        </div>
       </div>
 
     </div>
   </div>
 
-  <!-- TOAST -->
-  <div id="toast" class="fixed top-16 right-4 bg-emerald-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xl hidden z-50">
+  <!-- NOTIFICACIÓN TOAST -->
+  <div id="toast" class="fixed top-16 right-4 bg-emerald-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xl hidden z-50 transition-all">
     Mensaje
   </div>
 
@@ -277,7 +311,7 @@
     function renderMonitorGrid(mapaTasas) {
       const container = document.getElementById('gridMonitor');
       container.innerHTML = Object.entries(mapaTasas).map(([code, val]) => `
-        <div class="bg-cardDark border border-borderDark rounded-xl p-2.5 space-y-1">
+        <div class="bg-slate-900/80 border border-borderDark rounded-xl p-2.5 space-y-1">
           <div class="text-xs font-extrabold text-white flex justify-between">
             <span>${BANDERAS_MAP[code] || '🌐'} ${code}</span>
           </div>
@@ -392,13 +426,10 @@
       }
     }
 
-    // -----------------------------------------------------------------
-    // ACCIONES GENERALES (LOTE COMPLETO Y PRUEBA GENERAL)
-    // -----------------------------------------------------------------
-
+    // ACCIONES GENERALES LOTE COMPLETO
     function toggleGlobalTestMode(checked) {
       modoPruebaGlobal = checked;
-      showToast(`Prueba General Lote: ${checked ? 'ON' : 'OFF'}`);
+      showToast(`Prueba Lote: ${checked ? 'ON' : 'OFF'}`);
     }
 
     async function dispararLoteGeneral() {
@@ -409,16 +440,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ modo_prueba_global: modoPruebaGlobal })
         });
-        showToast('✅ Lote enviado correctamente');
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✅ Lote enviado (${data.procesados} socios)`);
+        } else {
+          showToast('❌ Error despachando lote');
+        }
       } catch (e) {
-        showToast('⚡ Lote procesado localmente');
+        showToast('❌ Error de conexión');
       }
     }
 
-    // -----------------------------------------------------------------
-    // ACCIONES INDIVIDUALES (DENTRO DEL MODAL)
-    // -----------------------------------------------------------------
-
+    // ACCIONES DE SOCIO INDIVIDUAL
     async function verVistaPrevia() {
       if (!socioActivo) return;
 
@@ -450,6 +483,23 @@
       }
     }
 
+    function descargarCarteleraPNG() {
+      const img = document.getElementById('imgPreviewCartelera');
+      if (!img || !img.src || img.classList.contains('hidden')) {
+        showToast('⚠️ Primero genera la vista previa');
+        return;
+      }
+
+      const a = document.createElement('a');
+      a.href = img.src;
+      const nombreSocio = socioActivo ? socioActivo.nombre.replace(/[^a-z0-9]/gi, '_') : 'socio';
+      a.download = `Cartelera_${nombreSocio}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('📥 Descargando cartelera...');
+    }
+
     function togglePartnerTestMode(checked) {
       if (!socioActivo) return;
       socioActivo.modo_prueba = checked;
@@ -459,7 +509,7 @@
     async function dispararCarteleraSocio() {
       if (!socioActivo) return;
 
-      showToast(`⚡ Enviando a ${socioActivo.nombre}...`);
+      showToast(`⚡ Enviando cartelera a ${socioActivo.nombre}...`);
 
       try {
         const res = await fetch('/api/v1/tasas/disparar', {
@@ -467,18 +517,19 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             socio: socioActivo.nombre,
-            modo_prueba: socioActivo.modo_prueba
+            modo_prueba: socioActivo.modo_prueba 
           })
         });
 
         const data = await res.json();
-        if (data.success) {
-          showToast(`✅ ${socioActivo.nombre} enviado (${socioActivo.modo_prueba ? 'Prueba' : 'Prod'})`);
+        if (res.ok && data.success) {
+          showToast(`✅ Cartelera enviada para ${socioActivo.nombre}`);
         } else {
-          showToast('❌ Error al enviar socio');
+          showToast(`❌ Error: ${data.error || 'No se pudo enviar'}`);
         }
       } catch (e) {
-        showToast('❌ Error de red');
+        console.error('Error al disparar socio:', e);
+        showToast('❌ Error de conexión al servidor');
       }
     }
 
@@ -492,7 +543,6 @@
       }
     }
 
-    // GUARDAR CAMBIOS DE CONFIGURACIÓN DEL SOCIO
     async function guardarCambiosSocio() {
       if (!socioActivo) return;
 
@@ -509,7 +559,7 @@
 
         const data = await res.json();
         if (data.success) {
-          showToast(`💾 Guardado en BD para ${socioActivo.nombre}`);
+          showToast(`💾 Guardado para ${socioActivo.nombre}`);
         } else {
           showToast('❌ Error guardando');
         }
@@ -525,60 +575,31 @@
       setTimeout(() => toast.classList.add('hidden'), 2200);
     }
 
-    async function dispararCarteleraSocio() {
-  if (!socioActivo) return;
+    // REGISTRO Y SOPORTE PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW Registration error:', e));
+      });
+    }
 
-  showToast(`⚡ Enviando cartelera a ${socioActivo.nombre}...`);
-
-  try {
-    const res = await fetch('/api/v1/tasas/disparar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        socio: socioActivo.nombre,
-        nombre: socioActivo.nombre,
-        modo_prueba: socioActivo.modo_prueba 
-      })
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btnInstall = document.getElementById('btnInstallPWA');
+      if (btnInstall) btnInstall.classList.remove('hidden');
     });
 
-    const data = await res.json();
-    if (res.ok && data.success) {
-      showToast(`✅ Cartelera enviada para ${socioActivo.nombre}`);
-    } else {
-      showToast(`❌ Error: ${data.error || 'No se pudo enviar'}`);
+    async function instalarPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        const btnInstall = document.getElementById('btnInstallPWA');
+        if (btnInstall) btnInstall.classList.add('hidden');
+      }
+      deferredPrompt = null;
     }
-  } catch (e) {
-    console.error('Error al disparar socio:', e);
-    showToast('❌ Error de conexión al servidor');
-  }
-}
-
-    // REGISTRO DE PWA Y SERVICE WORKER
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW Registration error:', e));
-  });
-}
-
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Muestra el botón de instalación si existe en el Header
-  const btnInstall = document.getElementById('btnInstallPWA');
-  if (btnInstall) btnInstall.classList.remove('hidden');
-});
-
-async function instalarPWA() {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') {
-    const btnInstall = document.getElementById('btnInstallPWA');
-    if (btnInstall) btnInstall.classList.add('hidden');
-  }
-  deferredPrompt = null;
-}
   </script>
 </body>
 </html>

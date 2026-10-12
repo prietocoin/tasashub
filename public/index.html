@@ -134,12 +134,12 @@
 
   </main>
 
-  <!-- BARRA INFERIOR FIJA (STICKY BOTTOM) PARA ACCIONES RÁPIDAS CON EL PULGAR -->
+  <!-- BARRA INFERIOR FIJA (STICKY BOTTOM) -->
   <div id="stickyFooter" class="hidden fixed bottom-0 left-0 right-0 bg-cardDark/95 backdrop-blur-md border-t border-borderDark p-3 z-30">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <button onclick="showToast('👁️ Generando vista previa...')" class="p-2.5 bg-slate-800 border border-borderDark text-slate-200 text-xs font-bold rounded-xl active:scale-95">
-          👁️
+        <button onclick="verVistaPrevia()" class="p-2.5 bg-slate-800 border border-borderDark text-slate-200 text-xs font-bold rounded-xl active:scale-95 flex items-center gap-1.5">
+          👁️ <span>Ver Previa</span>
         </button>
 
         <!-- PRUEBA SOCIO -->
@@ -172,7 +172,37 @@
     </div>
   </div>
 
-  <!-- TOAST -->
+  <!-- MODAL DE VISTA PREVIA PNG -->
+  <div id="modalPreview" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4">
+    <div class="bg-cardDark border border-borderDark rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Header Modal -->
+      <div class="p-3 border-b border-borderDark flex items-center justify-between bg-slate-900/50">
+        <h3 class="text-xs font-extrabold text-white flex items-center gap-2">
+          <span>👁️</span> Vista Previa de Cartelera
+        </h3>
+        <button onclick="cerrarVistaPrevia()" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-bold text-sm flex items-center justify-center">
+          ✕
+        </button>
+      </div>
+
+      <!-- Contenedor Imagen -->
+      <div class="p-4 flex-1 overflow-y-auto flex items-center justify-center bg-brandDark">
+        <div id="previewSpinner" class="text-cyan-400 text-xs font-bold animate-pulse flex items-center gap-2">
+          <span class="text-lg">⚡</span> Generando cartelera PNG...
+        </div>
+        <img id="imgPreviewCartelera" src="" alt="Vista Previa Cartelera" class="hidden w-full h-auto rounded-lg shadow-lg border border-borderDark object-contain">
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="p-3 border-t border-borderDark bg-slate-900/50 flex justify-end">
+        <button onclick="cerrarVistaPrevia()" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICADOR -->
   <div id="toast" class="fixed top-16 right-4 bg-emerald-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xl hidden z-50">
     Mensaje
   </div>
@@ -187,7 +217,7 @@
     let socios = [];
     let socioActivo = null;
 
-    // CARGA INICIAL DESDE TU BACKEND EXPRES
+    // CARGA INICIAL DESDE TU BACKEND EXPRESS
     window.onload = async () => {
       await cargarMonitor();
       await cargarSocios();
@@ -264,7 +294,7 @@
       const filtered = socios.filter(s => s.nombre.toLowerCase().includes(filter.toLowerCase()));
 
       container.innerHTML = filtered.map(s => `
-        <div onclick="selectPartner('${s.nombre}')" class="p-3 bg-slate-900 border border-borderDark rounded-xl active:bg-purple-900/30 flex items-center justify-between text-xs">
+        <div onclick="selectPartner('${s.nombre}')" class="p-3 bg-slate-900 border border-borderDark rounded-xl active:bg-purple-900/30 flex items-center justify-between text-xs cursor-pointer">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full ${s.activo !== false ? 'bg-emerald-400' : 'bg-rose-500'}"></span>
             <span class="font-extrabold text-white">${s.nombre}</span>
@@ -369,12 +399,53 @@
       showToast(`Prueba: ${checked ? 'ON' : 'OFF'}`);
     }
 
-    // 3. GUARDAR CAMBIOS DIRECTAMENTE EN POSTGRESQL (`perfiles_glaukov`)
+    // 3. GENERAR Y MOSTRAR VISTA PREVIA REAL (PNG)
+    async function verVistaPrevia() {
+      if (!socioActivo) return;
+
+      const modal = document.getElementById('modalPreview');
+      const spinner = document.getElementById('previewSpinner');
+      const img = document.getElementById('imgPreviewCartelera');
+
+      modal.classList.remove('hidden');
+      spinner.classList.remove('hidden');
+      img.classList.add('hidden');
+      img.src = '';
+
+      try {
+        const res = await fetch(`/api/v1/tasas/render/${encodeURIComponent(socioActivo.nombre)}`);
+        if (!res.ok) throw new Error('Error al renderizar');
+
+        const imageBlob = await res.blob();
+        const imageUrl = URL.createObjectURL(imageBlob);
+
+        img.src = imageUrl;
+        img.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      } catch (e) {
+        console.error('Error vista previa:', e);
+        showToast('❌ Error generando cartelera');
+        cerrarVistaPrevia();
+      }
+    }
+
+    function cerrarVistaPrevia() {
+      const modal = document.getElementById('modalPreview');
+      const img = document.getElementById('imgPreviewCartelera');
+
+      modal.classList.add('hidden');
+      if (img.src) {
+        URL.revokeObjectURL(img.src);
+        img.src = '';
+      }
+    }
+
+    // 4. GUARDAR CAMBIOS DIRECTAMENTE EN POSTGRESQL (`perfiles_glaukov`)
     async function guardarCambiosSocio() {
       if (!socioActivo) return;
 
       try {
-        const res = await fetch(`/api/v1/tasas/socios/${socioActivo.nombre}`, {
+        const res = await fetch(`/api/v1/tasas/socios/${encodeURIComponent(socioActivo.nombre)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 

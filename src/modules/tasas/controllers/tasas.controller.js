@@ -1,13 +1,5 @@
-import pkg from 'pg';
+import pool from '../../../config/db.js'; // 👈 Importa tu conexión existente del proyecto
 import { generarCarteleraPNG } from '../services/renderer.service.js';
-
-const { Pool } = pkg;
-
-// Configuración de conexión a PostgreSQL / Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
 
 const HOO_GLOBAL_RATES_URL = 'https://hoo.jairokov.com/global-rates';
 const JID_GRUPO_PRUEBA = process.env.JID_GRUPO_PRUEBA || '120363000000000000@g.us';
@@ -20,7 +12,7 @@ const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE;
 // -------------------------------------------------------------
 async function enviarMediaEvolution(jid, base64Data, caption) {
   if (!EVOLUTION_API_URL || !EVOLUTION_INSTANCE) {
-    console.log(`[SIMULACIÓN EVOLUTION] Envíado a ${jid}: ${caption}`);
+    console.log(`[SIMULACIÓN EVOLUTION] Enviado a ${jid}: ${caption}`);
     return { success: true, simulated: true };
   }
 
@@ -104,28 +96,34 @@ export async function obtenerTasasMonitor(req, res) {
       tasas: tasasObj
     });
   } catch (error) {
-    // IMPRIMIR DETALLE COMPLETO DEL ERROR EN NODE
-    console.error('❌ [DETALLE ERROR MONITOR]:', error);
+    console.error('[Error obtenerTasasMonitor]:', error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
 
-// 2. LISTAR TODOS LOS SOCIOS
+// 2. LISTAR SOCIOS
 export async function obtenerListaSocios(req, res) {
   try {
-    const result = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
+    let result;
+    try {
+      result = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
+    } catch (e) {
+      result = await pool.query('SELECT * FROM perfiles ORDER BY nombre ASC');
+    }
+
     const sociosNormalizados = result.rows.map(s => ({
       ...s,
       monedas: typeof s.monedas === 'string' ? JSON.parse(s.monedas) : (s.monedas || {})
     }));
+
     return res.json({ success: true, socios: sociosNormalizados });
   } catch (error) {
-    // IMPRIMIR DETALLE COMPLETO DEL ERROR EN NODE
-    console.error('❌ [DETALLE ERROR SOCIOS]:', error);
+    console.error('[Error obtenerListaSocios]:', error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
-// 3. ACTUALIZAR CONFIGURACIÓN DE UN SOCIO
+
+// 3. ACTUALIZAR SOCIO
 export async function actualizarMonedasSocio(req, res) {
   try {
     const { socio } = req.params;
@@ -152,7 +150,7 @@ export async function actualizarMonedasSocio(req, res) {
   }
 }
 
-// 4. TRAER BORRADOR DESDE HOO (https://hoo.jairokov.com/global-rates)
+// 4. TRAER BORRADOR HOO (https://hoo.jairokov.com/global-rates)
 export async function traerBorradorHoo(req, res) {
   try {
     const response = await fetch(HOO_GLOBAL_RATES_URL);
@@ -186,7 +184,7 @@ export async function traerBorradorHoo(req, res) {
   }
 }
 
-// 5. SOLO GUARDAR EN BD (INSERT EN tasas_glaukov)
+// 5. SOLO GUARDAR EN BD
 export async function guardarLoteSolo(req, res) {
   try {
     const { tasas } = req.body;
@@ -228,7 +226,7 @@ export async function guardarLoteSolo(req, res) {
   }
 }
 
-// 6. SOLO PUBLICAR A SOCIOS EN ON
+// 6. SOLO PUBLICAR
 export async function publicarLoteSolo(req, res) {
   try {
     const { modo_prueba_global } = req.body;
@@ -284,7 +282,7 @@ export async function publicarLoteSolo(req, res) {
   }
 }
 
-// 7. RENDERIZAR VISTA PREVIA INDIVIDUAL EN BUFFER PNG
+// 7. RENDERIZAR PNG
 export async function renderCartelera(req, res) {
   try {
     const socioNombre = req.params.socio || req.body.socio;
@@ -312,7 +310,7 @@ export async function renderCartelera(req, res) {
   }
 }
 
-// 8. DISPARAR CARTELERA INDIVIDUAL DE UN SOCIO
+// 8. DISPARAR SOCIO
 export async function dispararCartelera(req, res) {
   try {
     const { socio, modo_prueba } = req.body;
@@ -352,12 +350,12 @@ export async function dispararCartelera(req, res) {
   }
 }
 
-// 9. DISPARAR LOTE COMPLETO (COMPATIBILIDAD ANTERIOR)
+// 9. DISPARAR LOTE COMPLETO
 export async function dispararLoteGeneral(req, res) {
   return await publicarLoteSolo(req, res);
 }
 
-// 10. OBTENER CÁLCULO JSON DE TASAS DE UN SOCIO
+// 10. CALCULAR TASAS SOCIO
 export async function calcularTasas(req, res) {
   try {
     const socioNombre = req.params.socio;
@@ -384,7 +382,7 @@ export async function calcularTasas(req, res) {
   }
 }
 
-// 11. ELIMINAR LOTE POR ID_TASA (EJ: T068)
+// 11. ELIMINAR LOTE POR ID_TASA
 export async function eliminarLotePorId(req, res) {
   try {
     const { id_tasa } = req.params;

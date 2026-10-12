@@ -8,13 +8,16 @@ import {
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
 
-// Extrae el socio de los parámetros sin importar cómo se nombró en la ruta
+// Extrae el socio de PARAMS o de BODY (soporta GET / socio en URL y POST con JSON body)
 function extraerNombreSocio(req) {
   return (
-    req.params.nombreSocio ||
-    req.params.socio ||
-    req.params.nombre_socio ||
-    Object.values(req.params)[0]
+    req.body?.socio ||
+    req.body?.nombre ||
+    req.body?.nombreSocio ||
+    req.params?.nombreSocio ||
+    req.params?.socio ||
+    req.params?.nombre_socio ||
+    (req.params ? Object.values(req.params)[0] : null)
   );
 }
 
@@ -52,12 +55,16 @@ export async function actualizarMonedasSocio(req, res) {
 }
 
 // -------------------------------------------------------------
-// ENDPOINTS EXISTENTES (SIN CAMBIOS PARA PRESERVAR PRODUCCIÓN)
+// ENDPOINTS EXISTENTES
 // -------------------------------------------------------------
 
 export async function renderCartelera(req, res) {
   try {
     const nombreSocio = extraerNombreSocio(req);
+
+    if (!nombreSocio) {
+      return res.status(400).json({ success: false, error: 'Nombre de socio no especificado.' });
+    }
 
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
@@ -78,6 +85,10 @@ export async function calcularTasas(req, res) {
   try {
     const nombreSocio = extraerNombreSocio(req);
 
+    if (!nombreSocio) {
+      return res.status(400).json({ success: false, error: 'Nombre de socio no especificado.' });
+    }
+
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
 
@@ -93,6 +104,13 @@ export async function dispararCartelera(req, res) {
   try {
     const nombreSocio = extraerNombreSocio(req);
 
+    if (!nombreSocio) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'El nombre del socio no fue proporcionado en la petición.' 
+      });
+    }
+
     const perfil = await obtenerPerfilSocio(nombreSocio);
     const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
 
@@ -106,6 +124,7 @@ export async function dispararCartelera(req, res) {
       base64: pngBuffer.toString('base64'),
     });
   } catch (error) {
+    console.error('[Error Controller Disparar]:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

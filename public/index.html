@@ -78,43 +78,51 @@
 
     <!-- TAB 1: MONITOR GLOBAL -->
     <div id="tab1" class="space-y-3">
-      <div class="bg-cardDark border border-borderDark rounded-2xl p-3 shadow-xl space-y-3">
+      <div class="bg-cardDark border border-borderDark rounded-2xl p-4 shadow-xl space-y-4">
+        
         <div class="flex items-center justify-between text-xs pb-2 border-b border-borderDark">
-          <span class="font-bold text-emerald-400 tracking-wider flex items-center gap-1.5">
+          <span class="font-bold text-emerald-400 tracking-wider flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            PROD VS. NUEVO LOTE
+            MONITOR DE VARIACIÓN &amp; PUBLICACIÓN
           </span>
-          <span id="lblLoteActual" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full text-[11px]">
-            Lote: --
+          <span id="lblLoteActual" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold px-3 py-1 rounded-full text-[11px]">
+            Lote en Prod: --
           </span>
         </div>
 
-        <div id="gridMonitor" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+        <!-- GRID DINÁMICO DE MONEDAS CON INPUTS EDITABLES -->
+        <div id="gridMonitor" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           <!-- Carga dinámica vía API -->
         </div>
 
-        <!-- ACCIONES Y CONTROLES DEL MONITOR GLOBAL (PIE DEL PANEL) -->
-        <div class="pt-3 border-t border-borderDark/80 flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/40 p-2.5 rounded-xl">
-          <div class="text-[11px] font-bold text-slate-400">Acciones Lote Completo:</div>
+        <!-- ACCIONES SEPARADAS EN EL PIE DEL PANEL -->
+        <div class="pt-3 border-t border-borderDark/80 flex flex-wrap items-center justify-between gap-3 bg-slate-900/50 p-3 rounded-xl border border-borderDark/60">
+          
+          <!-- LADO IZQUIERDO: GUARDAR SOLO EN BD -->
+          <button onclick="guardarLoteEnBD()" class="px-4 py-2 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30 font-extrabold text-xs rounded-xl active:scale-95 transition flex items-center gap-2 shadow-lg shadow-emerald-500/10">
+            💾 <span>Guardar en tasas_glaukov</span>
+          </button>
 
-          <div class="flex items-center gap-2 flex-wrap">
-            <!-- Switch Prueba Lote -->
-            <label class="flex items-center gap-1.5 bg-slate-800 border border-borderDark px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-cyan-400 cursor-pointer">
-              <span class="text-[10px] text-slate-400">Prueba Lote:</span>
+          <!-- LADO DERECHO: PUBLICACIÓN Y HOO -->
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <!-- Switch Modo Prueba -->
+            <label class="flex items-center gap-2 bg-slate-800 border border-borderDark px-3 py-1.5 rounded-xl text-xs font-bold text-cyan-400 cursor-pointer">
+              <span class="text-slate-300">Prueba Lote:</span>
               <input type="checkbox" id="globalTestSwitch" checked class="sr-only peer" onchange="toggleGlobalTestMode(this.checked)">
-              <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
+              <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 relative"></div>
             </label>
 
-            <!-- Reenviar Lote Completo -->
-            <button onclick="dispararLoteGeneral()" class="px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
-              ⚡ <span>Lote Completo</span>
+            <!-- Publicar Lote a Socios ON -->
+            <button onclick="publicarLoteSocios()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl active:scale-95 transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+              ⚡ <span>Publicar Lote a Socios ON</span>
             </button>
 
-            <!-- Hook -->
-            <button onclick="showToast('📑 Borrador Cargado')" class="px-3 py-1.5 bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1">
-              📑 <span>Hoo</span>
+            <!-- Traer Borrador HOO -->
+            <button onclick="traerBorradorHoo()" class="px-3.5 py-2 bg-purple-500/20 border border-purple-500/40 text-purple-300 hover:bg-purple-500/30 text-xs font-extrabold rounded-xl active:scale-95 transition flex items-center gap-1.5">
+              📑 <span>Traer Borrador Hoo</span>
             </button>
           </div>
+
         </div>
       </div>
     </div>
@@ -266,6 +274,7 @@
     let socios = [];
     let socioActivo = null;
     let modoPruebaGlobal = true;
+    let borradorTasas = {};
 
     window.onload = async () => {
       await cargarMonitor();
@@ -277,7 +286,7 @@
         const res = await fetch('/api/v1/tasas/monitor');
         const data = await res.json();
         if (data.success && data.tasas) {
-          document.getElementById('lblLoteActual').innerText = `Lote: ${data.id_tasa || 'T000'}`;
+          document.getElementById('lblLoteActual').innerText = `Lote en Prod: ${data.id_tasa || 'T000'}`;
           renderMonitorGrid(data.tasas);
         }
       } catch (e) { console.error('Error monitor:', e); }
@@ -310,14 +319,97 @@
 
     function renderMonitorGrid(mapaTasas) {
       const container = document.getElementById('gridMonitor');
-      container.innerHTML = Object.entries(mapaTasas).map(([code, val]) => `
-        <div class="bg-slate-900/80 border border-borderDark rounded-xl p-2.5 space-y-1">
-          <div class="text-xs font-extrabold text-white flex justify-between">
-            <span>${BANDERAS_MAP[code] || '🌐'} ${code}</span>
+      borradorTasas = { ...mapaTasas };
+
+      // Omitir metadatos no numericos si vienen de BD
+      const clavesValidas = Object.keys(mapaTasas).filter(k => k !== 'ID' && k !== 'CREATED_AT');
+
+      container.innerHTML = clavesValidas.map(code => {
+        const val = mapaTasas[code];
+        return `
+          <div class="bg-slate-900/90 border border-borderDark rounded-xl p-3 space-y-2">
+            <div class="text-xs font-black text-purple-300 flex justify-between items-center">
+              <span>${BANDERAS_MAP[code] || '🌐'} ${code}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 font-bold flex justify-between">
+              <span>PROD:</span>
+              <span class="text-slate-200">${val}</span>
+            </div>
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-emerald-400 tracking-wider uppercase block">NUEVO LOTE</span>
+              <input type="number" step="any" value="${val}" oninput="actualizarValorBorrador('${code}', this.value)" 
+                class="w-full bg-brandDark border border-emerald-500/40 text-emerald-300 font-bold text-xs p-2 rounded-lg outline-none focus:border-emerald-400">
+            </div>
           </div>
-          <div class="text-[11px] text-slate-400">PROD: <strong class="text-slate-200">${val}</strong></div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+    }
+
+    function actualizarValorBorrador(code, valor) {
+      borradorTasas[code] = parseFloat(valor) || 0;
+    }
+
+    // ACCIÓN 1: TRAER BORRADOR DESDE HOO
+    async function traerBorradorHoo() {
+      showToast('📑 Leyendo datos de HOO...');
+      try {
+        const res = await fetch('/api/v1/tasas/hoo-borrador');
+        const data = await res.json();
+
+        if (data.success && data.borrador) {
+          renderMonitorGrid(data.borrador);
+          showToast('✅ Borrador cargado desde HOO');
+        } else {
+          showToast('❌ No se recibieron datos de HOO');
+        }
+      } catch (e) {
+        showToast('❌ Error de conexión al leer HOO');
+      }
+    }
+
+    // ACCIÓN 2: GUARDAR SOLO EN BD
+    async function guardarLoteEnBD() {
+      showToast('💾 Guardando en tasas_glaukov...');
+
+      try {
+        const res = await fetch('/api/v1/tasas/guardar-lote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasas: borradorTasas })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('lblLoteActual').innerText = `Lote en Prod: ${data.id_tasa}`;
+          showToast(`✅ Lote ${data.id_tasa} guardado en BD`);
+        } else {
+          showToast(`❌ Error: ${data.error}`);
+        }
+      } catch (e) {
+        showToast('❌ Error al guardar en servidor');
+      }
+    }
+
+    // ACCIÓN 3: PUBLICAR SOLO A SOCIOS EN ON
+    async function publicarLoteSocios() {
+      showToast('⚡ Despachando lote a socios en ON...');
+
+      try {
+        const res = await fetch('/api/v1/tasas/publicar-lote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modo_prueba_global: modoPruebaGlobal })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`🚀 Publicado a ${data.procesados} socios ON`);
+        } else {
+          showToast(`❌ Error al publicar: ${data.error}`);
+        }
+      } catch (e) {
+        showToast('❌ Error de conexión al publicar');
+      }
     }
 
     function openPartnerSheet() {
@@ -426,32 +518,11 @@
       }
     }
 
-    // ACCIONES GENERALES LOTE COMPLETO
     function toggleGlobalTestMode(checked) {
       modoPruebaGlobal = checked;
       showToast(`Prueba Lote: ${checked ? 'ON' : 'OFF'}`);
     }
 
-    async function dispararLoteGeneral() {
-      showToast('⚡ Enviando Lote Completo de Socios...');
-      try {
-        const res = await fetch('/api/v1/tasas/disparar-lote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ modo_prueba_global: modoPruebaGlobal })
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(`✅ Lote enviado (${data.procesados} socios)`);
-        } else {
-          showToast('❌ Error despachando lote');
-        }
-      } catch (e) {
-        showToast('❌ Error de conexión');
-      }
-    }
-
-    // ACCIONES DE SOCIO INDIVIDUAL
     async function verVistaPrevia() {
       if (!socioActivo) return;
 

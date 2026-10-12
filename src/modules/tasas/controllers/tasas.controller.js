@@ -39,10 +39,19 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
 
   const endpoint = `${EVOLUTION_API_URL}/message/sendMedia/${EVOLUTION_INSTANCE}`;
   
-  // 1. Asegurar formato Data URI
-  const formattedMedia = base64Data.startsWith('data:') 
-    ? base64Data 
-    : `data:image/png;base64,${base64Data}`;
+  // Clean string base64: EVOLUTION REQUIERE BASE64 PURO SIN CABECERA DATA URI
+  const base64Puro = base64Data.includes(',') 
+    ? base64Data.split(',')[1] 
+    : base64Data;
+
+  const payload = {
+    number: jid,
+    mediatype: 'image',
+    mimetype: 'image/png',
+    fileName: 'cartelera.png',
+    media: base64Puro,
+    caption: caption
+  };
 
   try {
     const response = await fetch(endpoint, {
@@ -51,25 +60,18 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
         'Content-Type': 'application/json',
         'apikey': EVOLUTION_API_KEY
       },
-      body: JSON.stringify({
-        number: jid,
-        mediaMessage: {
-          mediatype: 'image',
-          fileName: 'cartelera.png',
-          caption: caption,
-          media: formattedMedia
-        }
-      })
+      body: JSON.stringify(payload)
     });
 
     const resData = await response.json();
-    console.log(`[EVOLUTION API RES -> ${jid}]:`, JSON.stringify(resData));
+    console.log(`[EVOLUTION RES ${response.status} -> ${jid}]:`, JSON.stringify(resData));
     return resData;
   } catch (err) {
-    console.error(`[EVOLUTION API ERROR -> ${jid}]:`, err.message);
+    console.error(`[EVOLUTION ERROR -> ${jid}]:`, err.message);
     throw err;
   }
 }
+
 
 // =============================================================
 // CONTROLADORES / ENDPOINTS

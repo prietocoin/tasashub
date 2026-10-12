@@ -1,5 +1,6 @@
-import pool from '../../../config/db.js'; // 👈 Importa tu conexión existente del proyecto
+import pool from '../../../config/db.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
+import { calcularTasasCartelera } from '../services/calculo.service.js';
 
 const HOO_GLOBAL_RATES_URL = 'https://hoo.jairokov.com/global-rates';
 const JID_GRUPO_PRUEBA = process.env.JID_GRUPO_PRUEBA || '120363000000000000@g.us';
@@ -34,47 +35,6 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
   });
 
   return await response.json();
-}
-
-// -------------------------------------------------------------
-// HELPER: Formatear Tasas para la Cartelera del Socio
-// -------------------------------------------------------------
-function calcularTasasCartelera(socio, loteActual, loteAnterior) {
-  const mapaActual = typeof loteActual?.tasas === 'string' ? JSON.parse(loteActual.tasas) : (loteActual?.tasas || {});
-  const mapaAnterior = typeof loteAnterior?.tasas === 'string' ? JSON.parse(loteAnterior.tasas) : (loteAnterior?.tasas || {});
-  const configuracionMonedas = typeof socio.monedas === 'string' ? JSON.parse(socio.monedas) : (socio.monedas || {});
-
-  const tarjetas_paises = Object.entries(configuracionMonedas)
-    .filter(([_, conf]) => conf && conf.activo)
-    .map(([code, conf]) => {
-      const valorActual = parseFloat(mapaActual[code] || 0);
-      const valorAnterior = parseFloat(mapaAnterior[code] || 0);
-
-      let trend = 'stable';
-      if (valorActual > valorAnterior) trend = 'up';
-      else if (valorActual < valorAnterior) trend = 'down';
-
-      const margen = parseFloat(conf.margen || 0);
-      const compra = (valorActual + margen).toFixed(2);
-      const venta = (valorActual - margen).toFixed(2);
-
-      return {
-        code,
-        nombre_pais: conf.nombre || code,
-        compra,
-        venta,
-        trend
-      };
-    });
-
-  const fechaObj = new Date();
-  return {
-    nombre_socio: socio.nombre,
-    tarjetas_paises,
-    lote_tasa: loteActual?.id_tasa || 'T000',
-    hora_actualizacion: fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-    fecha_actualizacion: fechaObj.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
-  };
 }
 
 // =============================================================
@@ -174,7 +134,6 @@ export async function traerBorradorHoo(req, res) {
       PEN: Number(item.pen || 0),
       PYG: Number(item.pyg || 0),
       VES: String(item.ves || 0),
-      // NUEVO LOTE AGREGADO:
       USD: Number(item.usd || 1.00),
       USDT: Number(item.usdt || 1.00),
       PYUSD: Number(item.pyusd || 1.20),
@@ -267,7 +226,7 @@ export async function publicarLoteSolo(req, res) {
           ? JID_GRUPO_PRUEBA
           : (socio.id_grupo || JID_GRUPO_PRUEBA);
 
-        const caption = `${modo_prueba_global ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${datosCalculados.nombre_socio}* — Lote: ${loteActual.id_tasa}`;
+        const caption = `${modo_prueba_global ? '🧪 [PRUEBA]' : '🚀 [OFICIAL]'} Cartelera *${datosCalculados.nombre_socio || socio.nombre}* — Lote: ${loteActual.id_tasa}`;
 
         await enviarMediaEvolution(jidDestino, base64Image, caption);
         resultados.push({ socio: socio.nombre, status: 'ok' });
@@ -371,7 +330,7 @@ export async function calcularTasas(req, res) {
     } catch (e) {
       socioRes = await pool.query('SELECT * FROM perfiles WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
     }
-    
+
     if (socioRes.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Socio no encontrado' });
     }

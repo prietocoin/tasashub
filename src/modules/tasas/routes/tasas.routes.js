@@ -6,7 +6,10 @@ import {
   dispararLoteGeneral,
   obtenerTasasMonitor,
   obtenerListaSocios,
-  actualizarMonedasSocio
+  actualizarMonedasSocio,
+  traerBorradorHoo,
+  guardarLoteSolo,
+  publicarLoteSolo
 } from '../controllers/tasas.controller.js';
 
 const router = express.Router();
@@ -14,7 +17,11 @@ const router = express.Router();
 // Endpoints Dashboard
 router.get('/monitor', obtenerTasasMonitor);
 router.get('/socios', obtenerListaSocios);
+router.get('/hoo-borrador', traerBorradorHoo);
+
 router.put('/socios/:socio', actualizarMonedasSocio);
+router.post('/guardar-lote', guardarLoteSolo);
+router.post('/publicar-lote', publicarLoteSolo);
 
 // Endpoints Producción Existentes y Disparo Masivo
 router.get('/calcular/:socio', calcularTasas);

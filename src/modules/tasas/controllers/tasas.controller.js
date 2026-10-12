@@ -39,7 +39,6 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
 
   const endpoint = `${EVOLUTION_API_URL}/message/sendMedia/${EVOLUTION_INSTANCE}`;
   
-  // Clean string base64: EVOLUTION REQUIERE BASE64 PURO SIN CABECERA DATA URI
   const base64Puro = base64Data.includes(',') 
     ? base64Data.split(',')[1] 
     : base64Data;
@@ -58,7 +57,9 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': EVOLUTION_API_KEY
+        'apikey': EVOLUTION_API_KEY,
+        'Global-Api-Key': EVOLUTION_API_KEY,
+        'Authorization': `Bearer ${EVOLUTION_API_KEY}`
       },
       body: JSON.stringify(payload)
     });
@@ -71,7 +72,6 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
     throw err;
   }
 }
-
 
 // =============================================================
 // CONTROLADORES / ENDPOINTS

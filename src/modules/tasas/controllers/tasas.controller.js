@@ -150,7 +150,7 @@ export async function actualizarMonedasSocio(req, res) {
   }
 }
 
-// 4. TRAER BORRADOR HOO (https://hoo.jairokov.com/global-rates)
+// 4. TRAER BORRADOR DESDE HOO
 export async function traerBorradorHoo(req, res) {
   try {
     const response = await fetch(HOO_GLOBAL_RATES_URL);
@@ -174,6 +174,12 @@ export async function traerBorradorHoo(req, res) {
       PEN: Number(item.pen || 0),
       PYG: Number(item.pyg || 0),
       VES: String(item.ves || 0),
+      // NUEVO LOTE AGREGADO:
+      USD: Number(item.usd || 1.00),
+      USDT: Number(item.usdt || 1.00),
+      PYUSD: Number(item.pyusd || 1.20),
+      ECU: Number(item.ecu || 1.00),
+      PAN: Number(item.pan || 1.00),
       CREATED_AT: item.created_at || new Date().toISOString()
     };
 

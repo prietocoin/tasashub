@@ -9,8 +9,10 @@ import {
   actualizarMonedasSocio,
   traerBorradorHoo,
   guardarLoteSolo,
-  publicarLoteSolo
+  publicarLoteSolo,
+  eliminarLotePorId
 } from '../controllers/tasas.controller.js';
+
 
 const router = express.Router();
 
@@ -29,5 +31,6 @@ router.get('/render/:socio', renderCartelera);
 router.post('/render', renderCartelera);
 router.post('/disparar', dispararCartelera);
 router.post('/disparar-lote', dispararLoteGeneral);
+router.delete('/lote/:id_tasa', eliminarLotePorId);
 
 export default router;

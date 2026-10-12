@@ -48,9 +48,9 @@ async function enviarMediaEvolution(jid, base64Data, caption) {
 // HELPER: Formatear Tasas para la Cartelera del Socio
 // -------------------------------------------------------------
 function calcularTasasCartelera(socio, loteActual, loteAnterior) {
-  const mapaActual = loteActual?.tasas || {};
-  const mapaAnterior = loteAnterior?.tasas || {};
-  const configuracionMonedas = socio.monedas || {};
+  const mapaActual = typeof loteActual?.tasas === 'string' ? JSON.parse(loteActual.tasas) : (loteActual?.tasas || {});
+  const mapaAnterior = typeof loteAnterior?.tasas === 'string' ? JSON.parse(loteAnterior.tasas) : (loteAnterior?.tasas || {});
+  const configuracionMonedas = typeof socio.monedas === 'string' ? JSON.parse(socio.monedas) : (socio.monedas || {});
 
   const tarjetas_paises = Object.entries(configuracionMonedas)
     .filter(([_, conf]) => conf && conf.activo)
@@ -62,7 +62,6 @@ function calcularTasasCartelera(socio, loteActual, loteAnterior) {
       if (valorActual > valorAnterior) trend = 'up';
       else if (valorActual < valorAnterior) trend = 'down';
 
-      // Ajustes/Margen por socio si existen
       const margen = parseFloat(conf.margen || 0);
       const compra = (valorActual + margen).toFixed(2);
       const venta = (valorActual - margen).toFixed(2);
@@ -98,10 +97,11 @@ export async function obtenerTasasMonitor(req, res) {
       return res.json({ success: true, id_tasa: 'T000', tasas: {} });
     }
     const row = result.rows[0];
+    const tasasObj = typeof row.tasas === 'string' ? JSON.parse(row.tasas) : (row.tasas || {});
     return res.json({
       success: true,
-      id_tasa: row.id_tasa,
-      tasas: row.tasas || {}
+      id_tasa: row.id_tasa || 'T000',
+      tasas: tasasObj
     });
   } catch (error) {
     console.error('[Error obtenerTasasMonitor]:', error.message);
@@ -109,11 +109,22 @@ export async function obtenerTasasMonitor(req, res) {
   }
 }
 
-// 2. LISTAR TODOS LOS SOCIOS (perfiles_glaukov)
+// 2. LISTAR TODOS LOS SOCIOS (perfiles_glaukov o perfiles)
 export async function obtenerListaSocios(req, res) {
   try {
-    const result = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
-    return res.json({ success: true, socios: result.rows });
+    let result;
+    try {
+      result = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
+    } catch (e) {
+      result = await pool.query('SELECT * FROM perfiles ORDER BY nombre ASC');
+    }
+
+    const sociosNormalizados = result.rows.map(s => ({
+      ...s,
+      monedas: typeof s.monedas === 'string' ? JSON.parse(s.monedas) : (s.monedas || {})
+    }));
+
+    return res.json({ success: true, socios: sociosNormalizados });
   } catch (error) {
     console.error('[Error obtenerListaSocios]:', error.message);
     return res.status(500).json({ success: false, error: error.message });
@@ -126,13 +137,19 @@ export async function actualizarMonedasSocio(req, res) {
     const { socio } = req.params;
     const { monedas, activo, modo_prueba } = req.body;
 
-    const query = `
+    let query = `
       UPDATE perfiles_glaukov 
       SET monedas = $1, activo = $2, modo_prueba = $3
       WHERE LOWER(nombre) = LOWER($4)
       RETURNING *;
     `;
-    const result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, socio]);
+    let result;
+    try {
+      result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, socio]);
+    } catch (e) {
+      query = `UPDATE perfiles SET monedas = $1, activo = $2, modo_prueba = $3 WHERE LOWER(nombre) = LOWER($4) RETURNING *;`;
+      result = await pool.query(query, [JSON.stringify(monedas), activo, modo_prueba, socio]);
+    }
 
     return res.json({ success: true, socio: result.rows[0] });
   } catch (error) {
@@ -150,7 +167,6 @@ export async function traerBorradorHoo(req, res) {
     const data = await response.json();
     const item = Array.isArray(data) ? data[0] : data;
 
-    // Mapeo minúsculas HOO -> Estructura JSON para la tabla tasas_glaukov
     const borradorMapeado = {
       ID: String(item.id || ''),
       ARS: String(item.ars || 0),
@@ -185,7 +201,6 @@ export async function guardarLoteSolo(req, res) {
       return res.status(400).json({ success: false, error: 'Estructura de tasas inválida.' });
     }
 
-    // Calcular id_tasa consecutivo (ejemplo: T068 -> T069)
     const lastRow = await pool.query('SELECT id_tasa FROM tasas_glaukov ORDER BY id DESC LIMIT 1');
     let nextNum = 1;
 
@@ -224,7 +239,6 @@ export async function publicarLoteSolo(req, res) {
   try {
     const { modo_prueba_global } = req.body;
 
-    // Obtener los dos últimos lotes de tasas_glaukov
     const lotes = await pool.query('SELECT * FROM tasas_glaukov ORDER BY id DESC LIMIT 2');
     if (lotes.rows.length === 0) {
       return res.status(400).json({ success: false, error: 'No hay lotes guardados en tasas_glaukov para publicar.' });
@@ -233,14 +247,18 @@ export async function publicarLoteSolo(req, res) {
     const loteActual = lotes.rows[0];
     const loteAnterior = lotes.rows[1] || lotes.rows[0];
 
-    // Obtener socios
-    const sociosRes = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
+    let sociosRes;
+    try {
+      sociosRes = await pool.query('SELECT * FROM perfiles_glaukov ORDER BY nombre ASC');
+    } catch (e) {
+      sociosRes = await pool.query('SELECT * FROM perfiles ORDER BY nombre ASC');
+    }
     const socios = sociosRes.rows;
 
     const resultados = [];
 
     for (const socio of socios) {
-      if (socio.activo === false) continue; // Descartar socios OFF
+      if (socio.activo === false) continue;
 
       try {
         const datosCalculados = calcularTasasCartelera(socio, loteActual, loteAnterior);
@@ -277,7 +295,12 @@ export async function renderCartelera(req, res) {
   try {
     const socioNombre = req.params.socio || req.body.socio;
 
-    const socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    let socioRes;
+    try {
+      socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    } catch (e) {
+      socioRes = await pool.query('SELECT * FROM perfiles WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    }
     if (socioRes.rows.length === 0) return res.status(404).send('Socio no encontrado');
 
     const lotes = await pool.query('SELECT * FROM tasas_glaukov ORDER BY id DESC LIMIT 2');
@@ -300,7 +323,13 @@ export async function dispararCartelera(req, res) {
   try {
     const { socio, modo_prueba } = req.body;
 
-    const socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socio]);
+    let socioRes;
+    try {
+      socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socio]);
+    } catch (e) {
+      socioRes = await pool.query('SELECT * FROM perfiles WHERE LOWER(nombre) = LOWER($1)', [socio]);
+    }
+
     if (socioRes.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Socio no encontrado' });
     }
@@ -333,11 +362,17 @@ export async function dispararCartelera(req, res) {
 export async function dispararLoteGeneral(req, res) {
   return await publicarLoteSolo(req, res);
 }
+
 // 10. OBTENER CÁLCULO JSON DE TASAS DE UN SOCIO
 export async function calcularTasas(req, res) {
   try {
     const socioNombre = req.params.socio;
-    const socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    let socioRes;
+    try {
+      socioRes = await pool.query('SELECT * FROM perfiles_glaukov WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    } catch (e) {
+      socioRes = await pool.query('SELECT * FROM perfiles WHERE LOWER(nombre) = LOWER($1)', [socioNombre]);
+    }
     
     if (socioRes.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Socio no encontrado' });
@@ -354,6 +389,7 @@ export async function calcularTasas(req, res) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }
+
 // 11. ELIMINAR LOTE POR ID_TASA (EJ: T068)
 export async function eliminarLotePorId(req, res) {
   try {

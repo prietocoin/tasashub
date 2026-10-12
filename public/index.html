@@ -96,7 +96,7 @@
           </div>
         </div>
 
-        <!-- GRID DINÁMICO DE MONEDAS CON IMÁGENES DE BANDERAS DESDE ASSETS -->
+        <!-- GRID DINÁMICO DE MONEDAS -->
         <div id="gridMonitor" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           <!-- Carga dinámica vía API -->
         </div>
@@ -280,12 +280,18 @@
   </div>
 
   <script>
-    // MAPEO A ARCHIVOS DE BANDERAS PNG LOCALES
+    // MAPEO A ARCHIVOS DE BANDERAS PNG Y EMOJIS DE RESPALDO
     const MAPA_BANDERAS_ISO = {
       ARS: 'ar', BRL: 'br', CLP: 'cl', COP: 'co', MXN: 'mx',
       PEN: 'pe', PYG: 'py', VES: 've', USD: 'us', USDT: 'us',
       BOB: 'bo', EUR: 'eu', ECU: 'ec', PAN: 'pa', CRC: 'crc',
       CAD: 'ca', DOP: 'do'
+    };
+
+    const BANDERAS_EMOJI_FALLBACK = {
+      COP: '🇨🇴', PEN: '🇵🇪', ARS: '🇦🇷', BRL: '🇧🇷', MXN: '🇲🇽', EUR: '🇪🇺',
+      USD: '🇺🇸', USDT: '🪙', PYG: '🇵🇾', VES: '🇻🇪', CLP: '🇨🇱', DOP: '🇩🇴',
+      CRC: '🇨🇷', BOB: '🇧🇴', ECU: '🇪🇨', PAN: '🇵🇦', CAD: '🇨🇦'
     };
 
     let socios = [];
@@ -350,12 +356,15 @@
       container.innerHTML = clavesValidas.map(code => {
         const val = mapaTasas[code];
         const flagUrl = obtenerUrlBandera(code);
+        const emojiFallback = BANDERAS_EMOJI_FALLBACK[code] || '🌐';
 
         return `
           <div class="bg-slate-900/90 border border-borderDark rounded-xl p-3 space-y-2">
             <div class="text-xs font-black text-purple-300 flex justify-between items-center">
               <span class="flex items-center gap-1.5">
-                <img src="${flagUrl}" class="w-5 h-3.5 object-cover rounded border border-white/20" onerror="this.style.display='none'">
+                <img src="${flagUrl}" class="w-5 h-3.5 object-cover rounded border border-white/20" 
+                     onerror="this.onerror=null; this.remove(); document.getElementById('fallback-${code}').innerText='${emojiFallback}';">
+                <span id="fallback-${code}"></span>
                 ${code}
               </span>
             </div>
@@ -377,7 +386,6 @@
       borradorTasas[code] = parseFloat(valor) || 0;
     }
 
-    // LÓGICA DE BORRAR LOTE POR MINI-MODAL
     function abrirModalBorrarLote() {
       document.getElementById('txtBatchIdToDelete').value = loteActualCodigo;
       document.getElementById('modalDeleteBatch').classList.remove('hidden');
@@ -524,14 +532,17 @@
       const codigos = Object.keys(MAPA_BANDERAS_ISO);
 
       container.innerHTML = codigos.map(code => {
-        const isChecked = socioActivo.monedas[code]?.activo || false;
+        const isChecked = socioActivo.monedas?.[code]?.activo || false;
         if (isChecked) activeCount++;
         const flagUrl = obtenerUrlBandera(code);
+        const emojiFallback = BANDERAS_EMOJI_FALLBACK[code] || '🌐';
 
         return `
           <button onclick="toggleCountry('${code}')" class="p-3 border rounded-xl flex items-center justify-between active:scale-95 transition ${isChecked ? 'border-cyan-500/80 bg-cyan-500/10 text-white' : 'border-borderDark bg-cardDark text-slate-400'}">
             <div class="flex items-center gap-2 text-left">
-              <img src="${flagUrl}" class="w-5 h-3.5 object-cover rounded border border-white/20" onerror="this.style.display='none'">
+              <img src="${flagUrl}" class="w-5 h-3.5 object-cover rounded border border-white/20" 
+                   onerror="this.onerror=null; this.remove(); document.getElementById('chk-fallback-${code}').innerText='${emojiFallback}';">
+              <span id="chk-fallback-${code}"></span>
               <span class="text-xs font-bold">${code}</span>
             </div>
             <span class="text-xs">${isChecked ? '✅' : '⬜'}</span>

@@ -9,9 +9,11 @@ import { calcularTasasCartelera } from '../services/calculator.service.js';
 import { generarCarteleraPNG } from '../services/renderer.service.js';
 import { env } from '../../../config/env.js';
 
-// Configuración de la API de Evolution
-const INSTANCIA_EVOLUTION = env.EVOLUTION_INSTANCE || 'Jairo';
-const JID_GRUPO_PRUEBA = env.JID_GRUPO_PRUEBA || '120363421142957552@g.us';
+// Fallbacks directos para evitar 'undefined' en la construcción de la URL
+const DEFAULT_EVOLUTION_URL = 'https://automatizaciones-evolution-api.eo3pev.easypanel.host';
+const DEFAULT_API_KEY = '429683C4C977415CAAFCCE10F7D57E11';
+const INSTANCIA_EVOLUTION = env?.EVOLUTION_INSTANCE || process.env.EVOLUTION_INSTANCE || 'Jairo';
+const JID_GRUPO_PRUEBA = env?.JID_GRUPO_PRUEBA || process.env.JID_GRUPO_PRUEBA || '120363421142957552@g.us';
 
 function extraerNombreSocio(req) {
   return (
@@ -25,11 +27,13 @@ function extraerNombreSocio(req) {
   );
 }
 
-// Función limpia para despachar medios a Evolution API v1 / v2
+// Función limpia para despachar medios a Evolution API v1 / v2 securizada
 async function enviarMediaEvolution(jidDestino, base64PureImage, caption = '') {
-  const baseUrl = env.EVOLUTION_API_URL?.replace(/\/$/, '');
+  const rawUrl = env?.EVOLUTION_API_URL || process.env.EVOLUTION_API_URL || DEFAULT_EVOLUTION_URL;
+  const baseUrl = rawUrl.replace(/\/$/, '');
+  const apiKey = env?.AUTHENTICATION_API_KEY || process.env.AUTHENTICATION_API_KEY || DEFAULT_API_KEY;
+
   const url = `${baseUrl}/message/sendMedia/${INSTANCIA_EVOLUTION}`;
-  const apiKey = env.AUTHENTICATION_API_KEY || env.EVOLUTION_API_KEY;
 
   // Payload exacto requerido por Evolution API sendMedia
   const payload = {
@@ -186,6 +190,42 @@ export async function dispararCartelera(req, res) {
     });
   } catch (error) {
     console.error('[Error Controller Disparar]:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+// DISPARAR LOTE COMPLETO
+export async function dispararLoteGeneral(req, res) {
+  try {
+    const { modo_prueba_global } = req.body;
+    const socios = await obtenerTodosLosSocios();
+    const { loteActual, loteAnterior } = await obtenerUltimosDosLotesTasas();
+
+    const resultados = [];
+
+    for (const socio of socios) {
+      if (socio.activo === false) continue;
+
+      try {
+        const datosCalculados = calcularTasasCartelera(socio, loteActual, loteAnterior);
+        const pngBuffer = await generarCarteleraPNG(datosCalculados);
+        const pureBase64 = pngBuffer.toString('base64');
+
+        const jidDestino = modo_prueba_global 
+          ? JID_GRUPO_PRUEBA 
+          : (socio.id_grupo || JID_GRUPO_PRUEBA);
+
+        const caption = `${modo_prueba_global ? '🧪 [LOTE PRUEBA]' : '🚀 [LOTE OFICIAL]'} Cartelera *${datosCalculados.nombre_socio}*`;
+
+        await enviarMediaEvolution(jidDestino, pureBase64, caption);
+        resultados.push({ socio: socio.nombre, status: 'ok', jid: jidDestino });
+      } catch (err) {
+        resultados.push({ socio: socio.nombre, status: 'error', error: err.message });
+      }
+    }
+
+    return res.json({ success: true, procesados: resultados.length, detalle: resultados });
+  } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }

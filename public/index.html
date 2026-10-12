@@ -762,6 +762,23 @@ function renderMonitorGrid(mapaTasas) {
       }
       deferredPrompt = null;
     }
+async function enviarTasaRemesas() {
+  try {
+    showToast('⏳ Activando flujo de remesas...');
+    const res = await fetch('/api/v1/tasas/notificar-remesas', { method: 'POST' });
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('✅ Notificación insertada en BD');
+    } else {
+      showToast('❌ Error: ' + (data.error || 'No se pudo enviar'));
+    }
+  } catch (err) {
+    console.error('[Error enviarTasaRemesas]:', err);
+    showToast('❌ Error de conexión con el servidor');
+  }
+}
+    
   </script>
 </body>
 </html>

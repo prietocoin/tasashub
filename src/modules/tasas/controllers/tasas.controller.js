@@ -3,10 +3,11 @@ import { generarCarteleraPNG } from '../services/renderer.service.js';
 import { calcularTasasCartelera } from '../services/calculator.service.js';
 
 const HOO_GLOBAL_RATES_URL = 'https://hoo.jairokov.com/global-rates';
-const JID_GRUPO_PRUEBA = process.env.JID_GRUPO_PRUEBA || '120363000000000000@g.us';
+const JID_GRUPO_PRUEBA = process.env.JID_GRUPO_PRUEBA || '120363421142957552@g.us';
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL;
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE;
+// Lee AUTHENTICATION_API_KEY con fallback a EVOLUTION_API_KEY
+const EVOLUTION_API_KEY = process.env.AUTHENTICATION_API_KEY || process.env.EVOLUTION_API_KEY; 
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'Jairo';
 
 // -------------------------------------------------------------
 // HELPER: Normalizar la salida de calculator.service para renderer.service

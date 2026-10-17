@@ -7,7 +7,7 @@ const JID_GRUPO_PRUEBA = process.env.JID_GRUPO_PRUEBA || '120363421142957552@g.u
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL;
 // Lee AUTHENTICATION_API_KEY con fallback a EVOLUTION_API_KEY
 const EVOLUTION_API_KEY = process.env.AUTHENTICATION_API_KEY || process.env.EVOLUTION_API_KEY; 
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'Jairo';
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'GLAUK';
 
 // -------------------------------------------------------------
 // HELPER: Normalizar la salida de calculator.service para renderer.service

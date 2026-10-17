@@ -2,7 +2,7 @@ import { env } from '../../../config/env.js';
 
 /**
  * Envía la cartelera PNG en Base64 al grupo de WhatsApp correspondiente vía Evolution API
- * Instancia: Jairo
+ * Instancia: GLAUK
  */
 export async function enviarCarteleraWhatsApp(jidDestino, base64Image, caption = '') {
   if (!jidDestino) {
@@ -10,7 +10,7 @@ export async function enviarCarteleraWhatsApp(jidDestino, base64Image, caption =
   }
 
   // Nombre exacto de tu instancia en Evolution API
-  const instanceName = env.EVOLUTION_INSTANCE || 'Jairo';
+  const instanceName = env.EVOLUTION_INSTANCE || 'GLAUK';
   const url = `${env.EVOLUTION_API_URL}/message/sendMedia/${instanceName}`;
 
   const payload = {
